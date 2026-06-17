@@ -1,0 +1,16 @@
+{
+  "exclude": [
+    "test/**",
+    "node_modules/**",
+    "dist/**"
+  ],
+  "include": [
+    "out/test/src/**/*.js"
+  ],
+  "reporter": ["text", "lcov", "json-summary"],
+  "all": false,
+  "check-coverage": false,
+  "sourceMap": true,
+  "instrument": true,
+  "cache": false
+}

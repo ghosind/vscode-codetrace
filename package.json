@@ -1,0 +1,210 @@
+{
+  "name": "codetrace",
+  "displayName": "CodeTrace",
+  "version": "0.1.0",
+  "description": "Lightweight native Git code trace extension for VS Code.",
+  "publisher": "ghosind",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ghosind/vscode-codetrace"
+  },
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "git",
+    "blame",
+    "trace",
+    "history",
+    "code-trace"
+  ],
+  "activationEvents": [
+    "workspaceContains:**/.git"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codetrace-sidebar",
+          "title": "%codetrace.sidebar.title%",
+          "icon": "assets/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codetrace-sidebar": [
+        {
+          "id": "codetrace.lineHistory",
+          "name": "%codetrace.view.lineHistory%",
+          "type": "webview",
+          "icon": "assets/line-history.svg"
+        },
+        {
+          "id": "codetrace.fileHistory",
+          "name": "%codetrace.view.fileHistory%",
+          "type": "webview",
+          "icon": "assets/file-history.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codetrace.toggleBlame",
+        "title": "%codetrace.command.toggleBlame%"
+      },
+      {
+        "command": "codetrace.showFileHistory",
+        "title": "%codetrace.command.showFileHistory%"
+      },
+      {
+        "command": "codetrace.revertFileVersion",
+        "title": "%codetrace.command.revertFileVersion%"
+      },
+      {
+        "command": "codetrace.showSidebar",
+        "title": "%codetrace.command.showSidebar%"
+      },
+      {
+        "command": "codetrace.hideStatusBar",
+        "title": "%codetrace.command.hideStatusBar%"
+      },
+      {
+        "command": "codetrace.detectConflicts",
+        "title": "%codetrace.command.detectConflicts%"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "codetrace.toggleBlame",
+          "when": "codetrace:enabled"
+        },
+        {
+          "command": "codetrace.showFileHistory",
+          "when": "codetrace:enabled"
+        },
+        {
+          "command": "codetrace.detectConflicts",
+          "when": "codetrace:enabled"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "codetrace.showFileHistory",
+          "when": "codetrace:enabled",
+          "group": "codetrace"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CodeTrace",
+      "properties": {
+        "codetrace.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%codetrace.config.enabled%"
+        },
+        "codetrace.idleSleep.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%codetrace.config.idleSleep%"
+        },
+        "codetrace.idleSleep.timeout": {
+          "type": "number",
+          "default": 300,
+          "description": "%codetrace.config.idleSleepTimeout%"
+        },
+        "codetrace.blame.fontSize": {
+          "type": "string",
+          "default": "0.8em",
+          "description": "%codetrace.config.blameFontSize%"
+        },
+        "codetrace.blame.opacity": {
+          "type": "number",
+          "default": 0.55,
+          "description": "%codetrace.config.blameOpacity%"
+        },
+        "codetrace.blame.color": {
+          "type": "string",
+          "default": "auto",
+          "description": "%codetrace.config.blameColor%"
+        },
+        "codetrace.ignore.patterns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "node_modules/**",
+            "dist/**",
+            "build/**",
+            "out/**",
+            "*.lock",
+            "package-lock.json",
+            "yarn.lock"
+          ],
+          "description": "%codetrace.config.ignorePatterns%"
+        },
+        "codetrace.ignore.useGitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "%codetrace.config.useGitignore%"
+        },
+        "codetrace.fileSizeLimit": {
+          "type": "number",
+          "default": 20000,
+          "description": "%codetrace.config.fileSizeLimit%"
+        },
+        "codetrace.cache.maxCommits": {
+          "type": "number",
+          "default": 20,
+          "description": "%codetrace.config.maxCommits%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "compile:test": "tsc -p ./tsconfig.test.json",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext .ts --fix",
+    "lint:check": "eslint src --ext .ts",
+    "pretest": "npm run compile && npm run compile:test",
+    "test": "c8 --reporter=text --reporter=json-summary --check-coverage --lines 83 --functions 86 --branches 72 --statements 83 --exclude='test/**' --exclude='node_modules/**' --exclude='dist/**' node ./out/test/test/index.js",
+    "package": "vsce package",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10.0.6",
+    "@types/node": "20.x",
+    "@types/vscode": "1.75.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vscode/test-electron": "^2.3.9",
+    "@vscode/vsce": "^2.24.0",
+    "c8": "^11.0.0",
+    "eslint": "^8.56.0",
+    "glob": "^10.3.10",
+    "husky": "^9.0.10",
+    "lint-staged": "^15.2.2",
+    "mocha": "^10.4.0",
+    "nyc": "^15.1.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "simple-git": "^3.22.0"
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "eslint --fix --max-warnings 0"
+    ]
+  }
+}

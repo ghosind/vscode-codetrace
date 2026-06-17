@@ -1,0 +1,21 @@
+{
+  "codetrace.sidebar.title": "CodeTrace",
+  "codetrace.view.lineHistory": "Line History",
+  "codetrace.view.fileHistory": "File History",
+  "codetrace.command.toggleBlame": "CodeTrace: Toggle Inline Blame",
+  "codetrace.command.showFileHistory": "CodeTrace: Show File History",
+  "codetrace.command.revertFileVersion": "CodeTrace: Revert File Version",
+  "codetrace.command.showSidebar": "CodeTrace: Show Sidebar",
+  "codetrace.command.hideStatusBar": "CodeTrace: Hide Status Bar",
+  "codetrace.command.detectConflicts": "CodeTrace: Detect Plugin Conflicts",
+  "codetrace.config.enabled": "Enable/disable CodeTrace globally",
+  "codetrace.config.idleSleep": "Enable idle sleep to reduce resource usage",
+  "codetrace.config.idleSleepTimeout": "Idle timeout in seconds before entering sleep mode",
+  "codetrace.config.blameFontSize": "Font size for inline blame text (CSS value)",
+  "codetrace.config.blameOpacity": "Opacity for inline blame text (0-1)",
+  "codetrace.config.blameColor": "Color for inline blame text ('auto' follows theme)",
+  "codetrace.config.ignorePatterns": "Glob patterns for files/folders to ignore",
+  "codetrace.config.useGitignore": "Also respect .gitignore patterns",
+  "codetrace.config.fileSizeLimit": "Maximum file lines for inline blame (0 = unlimited)",
+  "codetrace.config.maxCommits": "Maximum commits cached per workspace"
+}

@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "[CodeTrace] Running pre-commit checks..."
+
+# ESLint check
+echo "[CodeTrace] ESLint check..."
+npx eslint src --ext .ts --max-warnings 0
+if [ $? -ne 0 ]; then
+  echo "[CodeTrace] ESLint check failed. Commit aborted."
+  exit 1
+fi
+
+# Run unit tests with coverage check
+echo "[CodeTrace] Running unit tests with coverage..."
+npm test
+if [ $? -ne 0 ]; then
+  echo "[CodeTrace] Test coverage check failed. Commit aborted."
+  exit 1
+fi
+
+echo "[CodeTrace] All checks passed."
