@@ -1,22 +1,22 @@
-/**
- * Simple Mocha test runner for CodeTrace unit tests.
- * Uses @vscode/test-electron to run tests inside VS Code's extension host.
- */
 import * as path from 'path';
 import { runTests } from '@vscode/test-electron';
 
 async function main(): Promise<void> {
-	try {
-		const extensionDevelopmentPath = path.resolve(__dirname, '../../');
-		const extensionTestsPath = path.resolve(__dirname, './suite');
+	const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
 
+	const launchArgs = ['--disable-extensions'];
+	if (isCI) {
+		launchArgs.push('--no-sandbox');
+	}
+
+	try {
 		await runTests({
-			extensionDevelopmentPath,
-			extensionTestsPath,
-			launchArgs: ['--disable-extensions', '--headless', '--disable-gpu'],
+			extensionDevelopmentPath: path.resolve(__dirname, '../../'),
+			extensionTestsPath: path.resolve(__dirname, './suite'),
+			launchArgs,
 		});
 	} catch (err) {
-		console.error('Tests failed:', err);
+		console.error('Tests failed:', err instanceof Error ? err.message : err);
 		process.exit(1);
 	}
 }
