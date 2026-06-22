@@ -13,7 +13,7 @@ async function main(): Promise<void> {
 		await runTests({
 			extensionDevelopmentPath,
 			extensionTestsPath,
-			launchArgs: ['--disable-extensions'],
+			launchArgs: ['--disable-extensions', '--headless', '--disable-gpu'],
 		});
 	} catch (err) {
 		console.error('Tests failed:', err);
