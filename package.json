@@ -1,6 +1,6 @@
 {
   "name": "codetrace",
-  "displayName": "CodeTrace",
+  "displayName": "Git Code Trace",
   "version": "0.1.0",
   "description": "Lightweight native Git code trace extension for VS Code.",
   "publisher": "ghosind",
