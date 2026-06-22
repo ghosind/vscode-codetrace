@@ -17,6 +17,7 @@
     "noUnusedParameters": false,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
+    "ignoreDeprecations": "6.0",
     "moduleResolution": "node",
     "types": ["node", "vscode", "mocha"]
   },

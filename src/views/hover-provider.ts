@@ -47,36 +47,38 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
 		const m = new vscode.MarkdownString();
 		m.isTrusted = true; m.supportHtml = true;
 
-		// Author + date on same line
-		const authorDisplay = blame.email
+		this.appendAuthorLine(m, blame);
+		this.appendCommitMessage(m, blame);
+		if (stats) { m.appendMarkdown(`---  \n\n`); m.appendMarkdown(this.colorizeStats(stats) + `  \n\n`); }
+		this.appendHashLine(m, blame);
+		return m;
+	}
+
+	private appendAuthorLine(m: vscode.MarkdownString, blame: {
+		author: string; email: string; timestamp: string;
+	}): void {
+		const author = blame.email
 			? `[${blame.author || blame.email}](mailto:${blame.email})`
 			: (blame.author || 'unknown');
 		const rel = formatRelativeTime(blame.timestamp);
 		const abs = formatAbsoluteTime(blame.timestamp);
-		const timeDisplay = (rel && abs) ? `${rel} (${abs})` : (rel || abs || '--');
-		m.appendMarkdown(`**${authorDisplay}**, *${timeDisplay}*  \n\n`);
+		const time = (rel && abs) ? `${rel} (${abs})` : (rel || abs || '--');
+		m.appendMarkdown(`**${author}**, *${time}*  \n\n`);
+	}
 
-		// Commit message
+	private appendCommitMessage(m: vscode.MarkdownString, blame: {
+		summary: string; body: string;
+	}): void {
 		m.appendMarkdown(`---  \n\n`);
 		m.appendMarkdown(`**${this.esc(blame.summary)}**  \n\n`);
-		if (blame.body?.trim()) {
-			m.appendMarkdown(`${this.esc(this.truncateBody(blame.body))}  \n\n`);
-		}
+		if (blame.body?.trim()) { m.appendMarkdown(`${this.esc(this.truncateBody(blame.body))}  \n\n`); }
+	}
 
-		// Change stats with color
-		if (stats) {
-			m.appendMarkdown(`---  \n\n`);
-			m.appendMarkdown(this.colorizeStats(stats) + `  \n\n`);
-		}
-
-		// Short hash + copy button on same line
-		const shortHash = blame.hash.substring(0, 8);
-		m.appendMarkdown(`*${shortHash}* `);
-		m.appendMarkdown(
-			`<a href="command:codetrace.copyHash?${encodeURIComponent(JSON.stringify([blame.hash]))}" ` +
-			`title="Copy full hash"><span class="codicon codicon-copy"></span></a>  \n`
-		);
-		return m;
+	private appendHashLine(m: vscode.MarkdownString, blame: { hash: string }): void {
+		const short = blame.hash.substring(0, 8);
+		m.appendMarkdown(`*${short}* `);
+		m.appendMarkdown(`<a href="command:codetrace.copyHash?${encodeURIComponent(JSON.stringify([blame.hash]))}" ` +
+			`title="Copy full hash"><span class="codicon codicon-copy"></span></a>  \n`);
 	}
 
 	/** Wrap additions in green and deletions in red using HTML spans. */

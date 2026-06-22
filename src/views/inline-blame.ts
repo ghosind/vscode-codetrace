@@ -95,50 +95,32 @@ export class InlineBlameManager {
      * Fetch blame for the current cursor line and decorate it.
      */
     private async updateCursorBlame(editor: vscode.TextEditor): Promise<void> {
-        if (!this.enabled) {
-            editor.setDecorations(this.getDecorationType(), []);
-            return;
-        }
+        if (!this.enabled) { editor.setDecorations(this.getDecorationType(), []); return; }
+        const cursorLine = this.checkCursorLine(editor);
+        if (cursorLine < 0) { return; }
 
-        const document = editor.document;
-        const cursorLine = editor.selection.active.line;
+        const blame = await this.provider.getBlameForLine(editor.document, cursorLine);
+        this.onBlameUpdate?.(blame?.hash.startsWith('0000000') ? undefined : blame?.hash);
 
-        // Skip if cursor hasn't moved lines
-        if (cursorLine === this.lastDecoratedLine) { return; }
-        this.lastDecoratedLine = cursorLine;
+        if (this.shouldClearBlame(blame, editor.document)) { editor.setDecorations(this.getDecorationType(), []); return; }
 
-        // Out of bounds guard
-        if (cursorLine < 0 || cursorLine >= document.lineCount) {
-            editor.setDecorations(this.getDecorationType(), []);
-            return;
-        }
+        const label = await this.buildBlameLabel(blame!.hash, blame!, editor.document);
+        this.applyBlameDecoration(editor, cursorLine, label);
+    }
 
-        const blame = await this.provider.getBlameForLine(document, cursorLine);
+    /** Returns cursor line number, or -1 if update should be skipped. */
+    private checkCursorLine(editor: vscode.TextEditor): number {
+        const line = editor.selection.active.line;
+        if (line === this.lastDecoratedLine) { return -1; }
+        this.lastDecoratedLine = line;
+        if (line < 0 || line >= editor.document.lineCount) { editor.setDecorations(this.getDecorationType(), []); return -1; }
+        return line;
+    }
 
-        // Report commit hash to status bar (only for committed changes)
-        const isUncommitted = blame?.hash.startsWith('0000000');
-        this.onBlameUpdate?.(isUncommitted ? undefined : blame?.hash);
-
-        // Uncommitted + unsaved: show nothing
-        if (isUncommitted && document.isDirty) {
-            editor.setDecorations(this.getDecorationType(), []);
-            return;
-        }
-
-        if (!blame) {
-            editor.setDecorations(this.getDecorationType(), []);
-            return;
-        }
-
-        const lineText = document.lineAt(cursorLine).text;
-        const label = await this.buildBlameLabel(blame.hash, blame, document);
-
-        // If all fields are empty, clear decorations instead of showing blank
-        if (!label) {
-            editor.setDecorations(this.getDecorationType(), []);
-            return;
-        }
-
+    /** Apply blame decoration for the given line. */
+    private applyBlameDecoration(editor: vscode.TextEditor, cursorLine: number, label: string): void {
+        if (!label) { editor.setDecorations(this.getDecorationType(), []); return; }
+        const lineText = editor.document.lineAt(cursorLine).text;
         editor.setDecorations(this.getDecorationType(), [{
             range: new vscode.Range(cursorLine, lineText.length, cursorLine, lineText.length),
             renderOptions: {
@@ -185,6 +167,12 @@ export class InlineBlameManager {
         if (saveTime) { parts.push(saveTime); }
         parts.push(t('codetrace.blame.uncommitted'));
         return parts.join(' \u2022 ');
+    }
+
+    /** Returns true if blame should be cleared (null/undefined result, or uncommitted+unsaved). */
+    private shouldClearBlame(blame: { hash?: string } | undefined, doc: vscode.TextDocument): boolean {
+        if (!blame) { return true; }
+        return !!(blame.hash?.startsWith('0000000') && doc.isDirty);
     }
 
     /** Check if a blame line represents uncommitted working-tree changes. */

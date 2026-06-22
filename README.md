@@ -23,7 +23,7 @@ CodeTrace is a performant, privacy-first Git blame extension that works entirely
 ## Requirements
 
 - **VS Code** ≥ 1.75.0
-- **Git** ≥ 2.20.0 (falls back gracefully to older versions via `simple-git`)
+- **Git** ≥ 2.20.0
 
 ## Installation
 

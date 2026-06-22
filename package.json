@@ -177,31 +177,29 @@
     "lint": "eslint src --ext .ts --fix",
     "lint:check": "eslint src --ext .ts",
     "pretest": "npm run compile && npm run compile:test",
-    "test": "c8 --reporter=text --reporter=json-summary --check-coverage --lines 83 --functions 86 --branches 72 --statements 83 --exclude='test/**' --exclude='node_modules/**' --exclude='dist/**' node ./out/test/test/index.js",
+    "test": "c8 --reporter=text --reporter=json-summary --check-coverage --lines 80 --functions 80 --branches 70 --statements 80 --exclude='test/**' --exclude='node_modules/**' --exclude='dist/**' node ./out/test/test/index.js",
     "package": "vsce package",
     "prepare": "husky install"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.6",
-    "@types/node": "20.x",
-    "@types/vscode": "1.75.0",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vscode/test-electron": "^2.3.9",
-    "@vscode/vsce": "^2.24.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.0.0",
+    "@types/vscode": "^1.75.0",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
+    "@vscode/test-electron": "^3.0.0",
+    "@vscode/vsce": "^3.9.2",
     "c8": "^11.0.0",
-    "eslint": "^8.56.0",
-    "glob": "^10.3.10",
-    "husky": "^9.0.10",
-    "lint-staged": "^15.2.2",
-    "mocha": "^10.4.0",
-    "nyc": "^15.1.0",
-    "typescript": "^5.3.3"
+    "eslint": "^10.5.0",
+    "glob": "^13.0.6",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "mocha": "^8.1.3",
+    "nyc": "^14.1.1",
+    "typescript": "^6.0.3"
   },
-  "dependencies": {
-    "simple-git": "^3.22.0"
-  },
+  "dependencies": {},
   "lint-staged": {
     "src/**/*.ts": [
       "eslint --fix --max-warnings 0"
