@@ -11,43 +11,43 @@ import { t } from './i18n';
  * @returns Human-readable relative time string
  */
 export function formatRelativeTime(isoTimestamp: string): string {
-	const now = Date.now();
-	const then = new Date(isoTimestamp).getTime();
+  const now = Date.now();
+  const then = new Date(isoTimestamp).getTime();
 
-	// Guard against invalid timestamps
-	if (isNaN(then)) {
-		return '';
-	}
+  // Guard against invalid timestamps
+  if (isNaN(then)) {
+    return '';
+  }
 
-	const diffMs = now - then;
+  const diffMs = now - then;
 
-	if (diffMs < 0) {
-		return formatAbsoluteTime(isoTimestamp);
-	}
+  if (diffMs < 0) {
+    return formatAbsoluteTime(isoTimestamp);
+  }
 
-	const seconds = Math.floor(diffMs / 1000);
-	const minutes = Math.floor(seconds / 60);
-	const hours = Math.floor(minutes / 60);
-	const days = Math.floor(hours / 24);
-	const weeks = Math.floor(days / 7);
-	const months = Math.floor(days / 30);
+  const seconds = Math.floor(diffMs / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
 
-	if (seconds < 60) {
-		return t('codetrace.general.relativeTime.justNow');
-	}
-	if (minutes < 60) {
-		return t('codetrace.general.relativeTime.minutesAgo', minutes);
-	}
-	if (hours < 24) {
-		return t('codetrace.general.relativeTime.hoursAgo', hours);
-	}
-	if (days < 7) {
-		return t('codetrace.general.relativeTime.daysAgo', days);
-	}
-	if (weeks < 4) {
-		return t('codetrace.general.relativeTime.weeksAgo', weeks);
-	}
-	return t('codetrace.general.relativeTime.monthsAgo', months > 12 ? 12 : months);
+  if (seconds < 60) {
+    return t('codetrace.general.relativeTime.justNow');
+  }
+  if (minutes < 60) {
+    return t('codetrace.general.relativeTime.minutesAgo', minutes);
+  }
+  if (hours < 24) {
+    return t('codetrace.general.relativeTime.hoursAgo', hours);
+  }
+  if (days < 7) {
+    return t('codetrace.general.relativeTime.daysAgo', days);
+  }
+  if (weeks < 4) {
+    return t('codetrace.general.relativeTime.weeksAgo', weeks);
+  }
+  return t('codetrace.general.relativeTime.monthsAgo', months > 12 ? 12 : months);
 }
 
 /**
@@ -56,15 +56,15 @@ export function formatRelativeTime(isoTimestamp: string): string {
  * @returns Formatted absolute time string
  */
 export function formatAbsoluteTime(isoTimestamp: string): string {
-	const date = new Date(isoTimestamp);
+  const date = new Date(isoTimestamp);
 
-	// Guard against invalid dates
-	if (isNaN(date.getTime())) {
-		return '';
-	}
+  // Guard against invalid dates
+  if (isNaN(date.getTime())) {
+    return '';
+  }
 
-	const pad = (n: number): string => n.toString().padStart(2, '0');
+  const pad = (n: number): string => n.toString().padStart(2, '0');
 
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ` +
 		`${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }

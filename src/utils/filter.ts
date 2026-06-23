@@ -11,13 +11,13 @@ import { warn } from './logger';
 
 /** Default patterns always excluded from blame */
 const DEFAULT_IGNORE_PATTERNS = [
-	'node_modules/**',
-	'dist/**',
-	'build/**',
-	'out/**',
-	'*.lock',
-	'package-lock.json',
-	'yarn.lock',
+  'node_modules/**',
+  'dist/**',
+  'build/**',
+  'out/**',
+  '*.lock',
+  'package-lock.json',
+  'yarn.lock',
 ];
 
 /**
@@ -27,17 +27,17 @@ const DEFAULT_IGNORE_PATTERNS = [
  * @returns true if the file should be ignored
  */
 function matchesIgnorePatterns(filePath: string, ignoreConfig: IgnoreConfig): boolean {
-	const allPatterns = [...DEFAULT_IGNORE_PATTERNS, ...ignoreConfig.patterns];
-	const relativePath = path.relative(getWorkspaceRoot() || '', filePath);
-	const fileName = path.basename(filePath);
+  const allPatterns = [...DEFAULT_IGNORE_PATTERNS, ...ignoreConfig.patterns];
+  const relativePath = path.relative(getWorkspaceRoot() || '', filePath);
+  const fileName = path.basename(filePath);
 
-	for (const pattern of allPatterns) {
-		if (matchGlob(relativePath, pattern) || matchGlob(fileName, pattern)) {
-			return true;
-		}
-	}
+  for (const pattern of allPatterns) {
+    if (matchGlob(relativePath, pattern) || matchGlob(fileName, pattern)) {
+      return true;
+    }
+  }
 
-	return false;
+  return false;
 }
 
 /**
@@ -48,16 +48,16 @@ function matchesIgnorePatterns(filePath: string, ignoreConfig: IgnoreConfig): bo
  * @returns true if target matches the pattern
  */
 function matchGlob(target: string, pattern: string): boolean {
-	// Convert glob pattern to regex
-	const regexStr = pattern
-		.replace(/\./g, '\\.')
-		.replace(/\*\*/g, '<<<GLOBSTAR>>>')
-		.replace(/\*/g, '[^/]*')
-		.replace(/<<<GLOBSTAR>>>/g, '.*')
-		.replace(/\?/g, '.');
+  // Convert glob pattern to regex
+  const regexStr = pattern
+    .replace(/\./g, '\\.')
+    .replace(/\*\*/g, '<<<GLOBSTAR>>>')
+    .replace(/\*/g, '[^/]*')
+    .replace(/<<<GLOBSTAR>>>/g, '.*')
+    .replace(/\?/g, '.');
 
-	const regex = new RegExp(`^${regexStr}$`);
-	return regex.test(target);
+  const regex = new RegExp(`^${regexStr}$`);
+  return regex.test(target);
 }
 
 /**
@@ -65,11 +65,11 @@ function matchGlob(target: string, pattern: string): boolean {
  * @returns The workspace root path or undefined
  */
 function getWorkspaceRoot(): string | undefined {
-	const folders = vscode.workspace.workspaceFolders;
-	if (!folders || folders.length === 0) {
-		return undefined;
-	}
-	return folders[0].uri.fsPath;
+  const folders = vscode.workspace.workspaceFolders;
+  if (!folders || folders.length === 0) {
+    return undefined;
+  }
+  return folders[0].uri.fsPath;
 }
 
 /**
@@ -77,26 +77,26 @@ function getWorkspaceRoot(): string | undefined {
  * @returns Array of gitignore patterns
  */
 function loadGitignorePatterns(): string[] {
-	const root = getWorkspaceRoot();
-	if (!root) {
-		return [];
-	}
+  const root = getWorkspaceRoot();
+  if (!root) {
+    return [];
+  }
 
-	const gitignorePath = path.join(root, '.gitignore');
-	if (!fs.existsSync(gitignorePath)) {
-		return [];
-	}
+  const gitignorePath = path.join(root, '.gitignore');
+  if (!fs.existsSync(gitignorePath)) {
+    return [];
+  }
 
-	try {
-		const content = fs.readFileSync(gitignorePath, 'utf-8');
-		return content
-			.split('\n')
-			.map((line) => line.trim())
-			.filter((line) => line && !line.startsWith('#'));
-	} catch (e) {
-		warn('Failed to load .gitignore', String(e));
-		return [];
-	}
+  try {
+    const content = fs.readFileSync(gitignorePath, 'utf-8');
+    return content
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.startsWith('#'));
+  } catch (e) {
+    warn('Failed to load .gitignore', String(e));
+    return [];
+  }
 }
 /**
  * Determine if a file should be excluded from blame processing.
@@ -105,33 +105,33 @@ function loadGitignorePatterns(): string[] {
  * @returns true if the file should be filtered out
  */
 export function shouldFilterFile(document: vscode.TextDocument): boolean {
-	const config = getConfig();
+  const config = getConfig();
 
-	// Check file size limit (0 means no limit)
-	if (config.fileSizeLimit > 0 && document.lineCount > config.fileSizeLimit) {
-		return true;
-	}
+  // Check file size limit (0 means no limit)
+  if (config.fileSizeLimit > 0 && document.lineCount > config.fileSizeLimit) {
+    return true;
+  }
 
-	const ignoreConfig = config.ignore;
+  const ignoreConfig = config.ignore;
 
-	// Check user-defined and default ignore patterns
-	if (matchesIgnorePatterns(document.uri.fsPath, ignoreConfig)) {
-		return true;
-	}
+  // Check user-defined and default ignore patterns
+  if (matchesIgnorePatterns(document.uri.fsPath, ignoreConfig)) {
+    return true;
+  }
 
-	// Check .gitignore if enabled
-	if (ignoreConfig.useGitignore) {
-		const gitignorePatterns = loadGitignorePatterns();
-		const relativePath = path.relative(getWorkspaceRoot() || '', document.uri.fsPath);
+  // Check .gitignore if enabled
+  if (ignoreConfig.useGitignore) {
+    const gitignorePatterns = loadGitignorePatterns();
+    const relativePath = path.relative(getWorkspaceRoot() || '', document.uri.fsPath);
 
-		for (const pattern of gitignorePatterns) {
-			if (matchGlob(relativePath, pattern)) {
-				return true;
-			}
-		}
-	}
+    for (const pattern of gitignorePatterns) {
+      if (matchGlob(relativePath, pattern)) {
+        return true;
+      }
+    }
+  }
 
-	return false;
+  return false;
 }
 
 /**
@@ -141,5 +141,5 @@ export function shouldFilterFile(document: vscode.TextDocument): boolean {
  * @returns true if the URI scheme is supported
  */
 export function isSupportedUriScheme(uri: vscode.Uri): boolean {
-	return uri.scheme === 'file';
+  return uri.scheme === 'file';
 }

@@ -11,10 +11,10 @@ import { info, warn } from './utils/logger';
  * Known conflicting extension IDs.
  */
 const CONFLICTING_EXTENSIONS = [
-	'eamodio.gitlens',
-	'mhutchie.git-graph',
-	'donjayamanne.githistory',
-	'waderyan.gitblame',
+  'eamodio.gitlens',
+  'mhutchie.git-graph',
+  'donjayamanne.githistory',
+  'waderyan.gitblame',
 ];
 
 /**
@@ -22,16 +22,16 @@ const CONFLICTING_EXTENSIONS = [
  * @returns Array of conflicting extension IDs
  */
 function detectConflictingExtensions(): string[] {
-	const conflicts: string[] = [];
+  const conflicts: string[] = [];
 
-	for (const extId of CONFLICTING_EXTENSIONS) {
-		const ext = vscode.extensions.getExtension(extId);
-		if (ext && ext.isActive) {
-			conflicts.push(extId);
-		}
-	}
+  for (const extId of CONFLICTING_EXTENSIONS) {
+    const ext = vscode.extensions.getExtension(extId);
+    if (ext && ext.isActive) {
+      conflicts.push(extId);
+    }
+  }
 
-	return conflicts;
+  return conflicts;
 }
 
 /**
@@ -39,26 +39,26 @@ function detectConflictingExtensions(): string[] {
  * Provides an option to disable conflicting extension features.
  */
 export async function detectConflicts(): Promise<void> {
-	const conflicts = detectConflictingExtensions();
+  const conflicts = detectConflictingExtensions();
 
-	if (conflicts.length === 0) {
-		info('No conflicting extensions detected');
-		return;
-	}
-	warn('Conflicting extensions detected', { conflicts });
+  if (conflicts.length === 0) {
+    info('No conflicting extensions detected');
+    return;
+  }
+  warn('Conflicting extensions detected', { conflicts });
 
-	const conflictNames = conflicts.map(getExtensionDisplayName).join(', ');
+  const conflictNames = conflicts.map(getExtensionDisplayName).join(', ');
 
-	const result = await vscode.window.showWarningMessage(
-		`${t('codetrace.conflict.message')}\n\n${conflictNames}`,
-		{ modal: false },
-		t('codetrace.conflict.disableBtn'),
-		t('codetrace.conflict.ignoreBtn')
-	);
+  const result = await vscode.window.showWarningMessage(
+    `${t('codetrace.conflict.message')}\n\n${conflictNames}`,
+    { modal: false },
+    t('codetrace.conflict.disableBtn'),
+    t('codetrace.conflict.ignoreBtn')
+  );
 
-	if (result === t('codetrace.conflict.disableBtn')) {
-		await disableConflictingFeatures(conflicts);
-	}
+  if (result === t('codetrace.conflict.disableBtn')) {
+    await disableConflictingFeatures(conflicts);
+  }
 }
 
 /**
@@ -67,11 +67,11 @@ export async function detectConflicts(): Promise<void> {
  * @returns Display name
  */
 function getExtensionDisplayName(extId: string): string {
-	const ext = vscode.extensions.getExtension(extId);
-	if (ext && ext.packageJSON) {
-		return ext.packageJSON.displayName || extId;
-	}
-	return extId;
+  const ext = vscode.extensions.getExtension(extId);
+  if (ext && ext.packageJSON) {
+    return ext.packageJSON.displayName || extId;
+  }
+  return extId;
 }
 
 /**
@@ -80,55 +80,55 @@ function getExtensionDisplayName(extId: string): string {
  * @param conflicts - Array of conflicting extension IDs
  */
 async function disableConflictingFeatures(conflicts: string[]): Promise<void> {
-	const config = vscode.workspace.getConfiguration();
+  const config = vscode.workspace.getConfiguration();
 
-	for (const extId of conflicts) {
-		switch (extId) {
-			case 'eamodio.gitlens':
-				// Disable GitLens blame features
-				try {
-					await config.update(
-						'gitlens.currentLine.enabled',
-						false,
-						vscode.ConfigurationTarget.Global
-					);
-					await config.update(
-						'gitlens.blame.highlight.enabled',
-						false,
-						vscode.ConfigurationTarget.Global
-					);
-					await config.update(
-						'gitlens.hovers.currentLine.over',
-						false,
-						vscode.ConfigurationTarget.Global
-					);
-				} catch (e) {
-					warn('Failed to disable GitLens features', String(e));
-				}
-				break;
+  for (const extId of conflicts) {
+    switch (extId) {
+      case 'eamodio.gitlens':
+        // Disable GitLens blame features
+        try {
+          await config.update(
+            'gitlens.currentLine.enabled',
+            false,
+            vscode.ConfigurationTarget.Global
+          );
+          await config.update(
+            'gitlens.blame.highlight.enabled',
+            false,
+            vscode.ConfigurationTarget.Global
+          );
+          await config.update(
+            'gitlens.hovers.currentLine.over',
+            false,
+            vscode.ConfigurationTarget.Global
+          );
+        } catch (e) {
+          warn('Failed to disable GitLens features', String(e));
+        }
+        break;
 
-			case 'mhutchie.git-graph':
-				// Git Graph doesn't have inline blame, usually safe
-				break;
+      case 'mhutchie.git-graph':
+        // Git Graph doesn't have inline blame, usually safe
+        break;
 
-			case 'waderyan.gitblame':
-			case 'donjayamanne.githistory':
-				try {
-					await config.update(
-						'gitblame.statusBarMessageEnabled',
-						false,
-						vscode.ConfigurationTarget.Global
-					);
-				} catch (e) {
-					warn('Failed to disable git blame features', String(e));
-				}
-				break;
-		}
-	}
+      case 'waderyan.gitblame':
+      case 'donjayamanne.githistory':
+        try {
+          await config.update(
+            'gitblame.statusBarMessageEnabled',
+            false,
+            vscode.ConfigurationTarget.Global
+          );
+        } catch (e) {
+          warn('Failed to disable git blame features', String(e));
+        }
+        break;
+    }
+  }
 
-	vscode.window.showInformationMessage(
-		'CodeTrace: Conflicting features have been disabled. Please reload VS Code for changes to take effect.'
-	);
+  vscode.window.showInformationMessage(
+    'CodeTrace: Conflicting features have been disabled. Please reload VS Code for changes to take effect.'
+  );
 }
 
 /**
@@ -137,5 +137,5 @@ async function disableConflictingFeatures(conflicts: string[]): Promise<void> {
  * @returns true if conflicts were detected
  */
 export function hasConflicts(): boolean {
-	return detectConflictingExtensions().length > 0;
+  return detectConflictingExtensions().length > 0;
 }

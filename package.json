@@ -169,7 +169,12 @@
         "codetrace.logLevel": {
           "type": "string",
           "default": "info",
-          "enum": ["debug", "info", "warn", "error"],
+          "enum": [
+            "debug",
+            "info",
+            "warn",
+            "error"
+          ],
           "description": "%codetrace.config.logLevel%"
         }
       }
@@ -188,6 +193,7 @@
     "prepare": "husky install"
   },
   "devDependencies": {
+    "@stylistic/eslint-plugin": "^5.10.0",
     "@types/glob": "^8.1.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "^26.0.0",
@@ -205,7 +211,6 @@
     "nyc": "^14.1.1",
     "typescript": "^6.0.3"
   },
-  "dependencies": {},
   "lint-staged": {
     "src/**/*.ts": [
       "eslint --fix --max-warnings 0"

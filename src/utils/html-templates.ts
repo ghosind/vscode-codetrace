@@ -12,7 +12,7 @@ import { CommitLogEntry } from '../core/git-engine';
  * @returns Full HTML document string
  */
 export function wrapHtml(title: string, bodyContent: string): string {
-	return `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -65,8 +65,8 @@ export function wrapHtml(title: string, bodyContent: string): string {
  * @returns HTML string
  */
 export function renderHistoryItem(entry: CommitLogEntry): string {
-	const relTime = formatRelativeTime(entry.timestamp);
-	return `<div class="history-item" data-hash="${escapeHtml(entry.hash)}">
+  const relTime = formatRelativeTime(entry.timestamp);
+  return `<div class="history-item" data-hash="${escapeHtml(entry.hash)}">
   <div class="header">
     <span class="author">${escapeHtml(entry.author)}</span>
     <span class="time">${escapeHtml(relTime)}</span>
@@ -78,6 +78,6 @@ export function renderHistoryItem(entry: CommitLogEntry): string {
 
 /** Escape HTML special characters. */
 export function escapeHtml(text: string): string {
-	return text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-		.replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }

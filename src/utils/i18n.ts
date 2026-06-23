@@ -25,11 +25,11 @@ let currentLocale: SupportedLocale = 'en';
  * @returns The best-matching supported locale identifier
  */
 function detectLocale(): SupportedLocale {
-	const vscodeLocale = vscode.env.language.toLowerCase();
-	if (vscodeLocale.startsWith('zh')) {
-		return 'zh-cn';
-	}
-	return 'en';
+  const vscodeLocale = vscode.env.language.toLowerCase();
+  if (vscodeLocale.startsWith('zh')) {
+    return 'zh-cn';
+  }
+  return 'en';
 }
 
 /**
@@ -38,16 +38,16 @@ function detectLocale(): SupportedLocale {
  * @param context - VS Code extension context for resolving paths
  */
 function loadLanguagePack(locale: SupportedLocale, context: vscode.ExtensionContext): void {
-	try {
-		const i18nPath = path.join(context.extensionPath, 'i18n', `${locale}.json`);
-		if (fs.existsSync(i18nPath)) {
-			const raw = fs.readFileSync(i18nPath, 'utf-8');
-			const pack: Record<string, string> = JSON.parse(raw);
-			languagePacks.set(locale, pack);
-		}
-	} catch (e) {
-		warn(`Failed to load language pack: ${locale}`, String(e));
-	}
+  try {
+    const i18nPath = path.join(context.extensionPath, 'i18n', `${locale}.json`);
+    if (fs.existsSync(i18nPath)) {
+      const raw = fs.readFileSync(i18nPath, 'utf-8');
+      const pack: Record<string, string> = JSON.parse(raw);
+      languagePacks.set(locale, pack);
+    }
+  } catch (e) {
+    warn(`Failed to load language pack: ${locale}`, String(e));
+  }
 }
 
 /**
@@ -55,12 +55,12 @@ function loadLanguagePack(locale: SupportedLocale, context: vscode.ExtensionCont
  * @param context - VS Code extension context
  */
 export function initializeI18n(context: vscode.ExtensionContext): void {
-	currentLocale = detectLocale();
-	// Always load English as fallback
-	loadLanguagePack('en', context);
-	if (currentLocale !== 'en') {
-		loadLanguagePack(currentLocale, context);
-	}
+  currentLocale = detectLocale();
+  // Always load English as fallback
+  loadLanguagePack('en', context);
+  if (currentLocale !== 'en') {
+    loadLanguagePack(currentLocale, context);
+  }
 }
 
 /**
@@ -71,33 +71,33 @@ export function initializeI18n(context: vscode.ExtensionContext): void {
  * @returns The localized string
  */
 export function t(key: MessageKey, ...args: (string | number)[]): string {
-	let message: string | undefined;
+  let message: string | undefined;
 
-	// Try current locale first
-	const currentPack = languagePacks.get(currentLocale);
-	if (currentPack) {
-		message = currentPack[key];
-	}
+  // Try current locale first
+  const currentPack = languagePacks.get(currentLocale);
+  if (currentPack) {
+    message = currentPack[key];
+  }
 
-	// Fall back to English
-	if (!message) {
-		const enPack = languagePacks.get('en');
-		if (enPack) {
-			message = enPack[key];
-		}
-	}
+  // Fall back to English
+  if (!message) {
+    const enPack = languagePacks.get('en');
+    if (enPack) {
+      message = enPack[key];
+    }
+  }
 
-	// Final fallback: derive a human-readable string from the key itself
-	if (!message) {
-		const lastSegment = key.split('.').pop() || key;
-		message = lastSegment.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
-	}
+  // Final fallback: derive a human-readable string from the key itself
+  if (!message) {
+    const lastSegment = key.split('.').pop() || key;
+    message = lastSegment.replace(/([A-Z])/g, ' $1').replace(/^./, (c) => c.toUpperCase()).trim();
+  }
 
-	// Replace placeholders {0}, {1}, etc.
-	return message.replace(/\{(\d+)\}/g, (_match, index: string) => {
-		const i = parseInt(index, 10);
-		return i < args.length ? String(args[i]) : `{${index}}`;
-	});
+  // Replace placeholders {0}, {1}, etc.
+  return message.replace(/\{(\d+)\}/g, (_match, index: string) => {
+    const i = parseInt(index, 10);
+    return i < args.length ? String(args[i]) : `{${index}}`;
+  });
 }
 
 /**
@@ -105,5 +105,5 @@ export function t(key: MessageKey, ...args: (string | number)[]): string {
  * @returns The active locale string
  */
 export function getCurrentLocale(): SupportedLocale {
-	return currentLocale;
+  return currentLocale;
 }
