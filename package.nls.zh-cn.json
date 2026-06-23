@@ -17,5 +17,6 @@
   "codetrace.config.ignorePatterns": "需要忽略的文件/文件夹 Glob 模式",
   "codetrace.config.useGitignore": "同时遵循 .gitignore 规则",
   "codetrace.config.fileSizeLimit": "行内溯源最大文件行数（0 = 不限制）",
-  "codetrace.config.maxCommits": "每个工作区最大缓存提交数"
+  "codetrace.config.maxCommits": "每个工作区最大缓存提交数",
+  "codetrace.config.logLevel": "输出通道日志级别"
 }

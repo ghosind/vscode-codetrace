@@ -13,6 +13,7 @@ import { StatusBarManager } from './views/status-bar';
 import { initializeI18n } from './utils/i18n';
 import { getConfig } from './utils/config';
 import { detectConflicts } from './conflict-detector';
+import { initLogger, info, warn, error as logErr } from './utils/logger';
 
 let gitEngine: GitEngine | undefined;
 let cacheManager: CacheManager | undefined;
@@ -26,21 +27,35 @@ const allDisposables: vscode.Disposable[] = [];
 
 /** Activation: called when workspace containing .git is opened. */
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    initLogger(context);
     initializeI18n(context);
-    if (!getConfig().enabled) { return; }
+    info('CodeTrace activating...');
+
+    if (!getConfig().enabled) {
+        info('CodeTrace disabled by config, skipping activation');
+        return;
+    }
 
     const repoPath = getWorkspaceRoot();
-    if (!repoPath) { return; }
+    if (!repoPath) {
+        warn('No workspace root with .git found, skipping activation');
+        return;
+    }
+    info('Workspace root', { repoPath });
 
-    await initSubsystems(context, repoPath);
-    registerCommands(context);
-    registerViews(context);
-    registerListeners();
-    // Trigger initial refresh for any already-open editor (session restore)
-    triggerInitialRefresh();
-    statusBarManager?.show();
-    vscode.commands.executeCommand('setContext', 'codetrace:enabled', true);
-    setTimeout(() => detectConflicts(), 3000);
+    try {
+        await initSubsystems(context, repoPath);
+        registerCommands(context);
+        registerViews(context);
+        registerListeners();
+        triggerInitialRefresh();
+        statusBarManager?.show();
+        vscode.commands.executeCommand('setContext', 'codetrace:enabled', true);
+        setTimeout(() => detectConflicts(), 3000);
+        info('CodeTrace activated successfully');
+    } catch (e) {
+        logErr('CodeTrace activation failed', e);
+    }
 }
 
 function getWorkspaceRoot(): string | undefined {
@@ -49,6 +64,7 @@ function getWorkspaceRoot(): string | undefined {
 }
 
 async function initSubsystems(context: vscode.ExtensionContext, repoPath: string): Promise<void> {
+    info('Initializing subsystems...');
     cacheManager = new CacheManager(context, getConfig().cacheMaxCommits);
     allDisposables.push(cacheManager);
     gitEngine = new GitEngine(repoPath);
@@ -142,7 +158,8 @@ function triggerInitialRefresh(): void {
 
 /** Deactivation: cleanup all resources. */
 export function deactivate(): void {
-    for (const d of allDisposables.reverse()) { try { d.dispose(); } catch { /* silent */ } }
+    info('CodeTrace deactivating, cleaning up...');
+    for (const d of allDisposables.reverse()) { try { d.dispose(); } catch (e) { warn('dispose error', String(e)); } }
     vscode.commands.executeCommand('setContext', 'codetrace:enabled', false);
     [gitEngine, cacheManager, blameProvider, inlineBlameManager,
         hoverProvider, lineHistoryProvider, fileHistoryProvider, statusBarManager] =

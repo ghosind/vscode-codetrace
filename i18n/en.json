@@ -20,6 +20,7 @@
   "codetrace.config.useGitignore": "Also respect .gitignore patterns",
   "codetrace.config.fileSizeLimit": "Maximum file lines for inline blame (0 = unlimited)",
   "codetrace.config.maxCommits": "Maximum commits cached per workspace",
+  "codetrace.config.logLevel": "Log level for output channel (debug, info, warn, error)",
   "codetrace.hover.commitTitle": "Commit Message",
   "codetrace.hover.commitBody": "Description",
   "codetrace.hover.openCommit": "Open Commit Details",

@@ -4,6 +4,7 @@
 import { spawn } from 'child_process';
 import * as path from 'path';
 import { parseBlamePorcelain } from './blame-parser';
+import { debug, warn } from '../utils/logger';
 
 const CMD_TIMEOUT_MS = 8000;
 
@@ -24,18 +25,20 @@ export class GitEngine {
 
     async initialize(): Promise<void> {
         if (this.disposed) { return; }
-        try { await this.execCli(['--version']); } catch { /* noop */ }
+        try { await this.execCli(['--version']); } catch (e) { warn('git --version failed', String(e)); }
     }
 
     /** Execute a Git CLI command with timeout. */
     execCli(args: string[]): Promise<string | undefined> {
+        const cmd = `git ${args.join(' ')}`;
+        debug(cmd);
         return new Promise<string | undefined>((resolve) => {
             const proc = spawn('git', args, { cwd: this.repoPath, timeout: CMD_TIMEOUT_MS, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } });
             let stdout = ''; let settled = false;
             proc.stdout?.on('data', (d: Buffer) => { stdout += d.toString(); });
             const finish = (): void => { if (!settled) { settled = true; resolve(stdout.trim() || undefined); } };
             proc.on('close', finish);
-            proc.on('error', () => { if (!settled) { settled = true; resolve(undefined); } });
+            proc.on('error', (err) => { if (!settled) { settled = true; warn(`git command error: ${cmd}`, String(err)); resolve(undefined); } });
             setTimeout(() => { if (!settled) { settled = true; proc.kill(); resolve(undefined); } }, CMD_TIMEOUT_MS);
         });
     }
@@ -49,7 +52,7 @@ export class GitEngine {
     async getBlame(filePath: string): Promise<BlameResult[]> {
         if (this.disposed) { return []; }
         try { const o = await this.execCli(['blame', '--porcelain', '--', filePath]); if (o) { return parseBlamePorcelain(o); } }
-        catch { /* */ }
+        catch (e) { warn('git blame failed', { filePath, error: String(e) }); }
         return [];
     }
 
@@ -57,47 +60,47 @@ export class GitEngine {
         if (this.disposed) { return []; }
         const rel = this.toRepoRelative(filePath);
         try { const o = await this.execCli(['log', `-${maxCount}`, '--format=%H%n%an%n%ae%n%aI%n%s%n%b%n---END---', '--', rel]); if (o) { return parseLogOutput(o); } }
-        catch { /* */ }
+        catch (e) { warn('git log failed', { filePath, error: String(e) }); }
         return [];
     }
 
     async getCurrentBranch(): Promise<string | undefined> {
         if (this.disposed) { return undefined; }
         try { const o = await this.execCli(['rev-parse', '--abbrev-ref', 'HEAD']); if (o) { return o; } }
-        catch { /* */ }
+        catch (e) { warn('getCurrentBranch failed', String(e)); }
         return undefined;
     }
 
     async getDiff(filePath: string, commitHash: string): Promise<string | undefined> {
         if (this.disposed) { return undefined; }
         try { const o = await this.execCli(['diff', commitHash, '--', filePath]); if (o) { return o; } }
-        catch { /* */ }
+        catch (e) { warn('git diff failed', { filePath, commitHash, error: String(e) }); }
         return undefined;
     }
 
     async getFileAtCommit(filePath: string, commitHash: string): Promise<string | undefined> {
         if (this.disposed) { return undefined; }
         try { const o = await this.execCli(['show', `${commitHash}:${filePath}`]); if (o) { return o; } }
-        catch { /* */ }
+        catch (e) { warn('git show failed', { filePath, commitHash, error: String(e) }); }
         return undefined;
     }
 
     async getChangedFilesCount(): Promise<number> {
         if (this.disposed) { return 0; }
         try { const o = await this.execCli(['status', '--porcelain']); if (o) { return o.split('\n').filter((l) => l.trim()).length; } }
-        catch { /* */ }
+        catch (e) { warn('git status failed', String(e)); }
         return 0;
     }
 
     async getLatestHash(): Promise<string | undefined> {
         if (this.disposed) { return undefined; }
         try { return await this.execCli(['rev-parse', '--short', 'HEAD']); }
-        catch { return undefined; }
+        catch (e) { warn('rev-parse HEAD failed', String(e)); return undefined; }
     }
 
     async getUserName(): Promise<string> {
         try { return (await this.execCli(['config', 'user.name'])) || 'You'; }
-        catch { return 'You'; }
+        catch (e) { warn('git config user.name failed', String(e)); return 'You'; }
     }
 
     async getCommitStats(hash: string): Promise<string | undefined> {
@@ -105,7 +108,7 @@ export class GitEngine {
         try {
             const o = await this.execCli(['show', '--stat', '--format=', hash]);
             if (o) { const lines = o.trim().split('\n'); return lines[lines.length - 1]?.trim(); }
-        } catch { /* */ }
+        } catch (e) { warn('getCommitStats failed', { hash, error: String(e) }); }
         return undefined;
     }
 

@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 import { getConfig, IgnoreConfig } from './config';
+import { warn } from './logger';
 
 /** Default patterns always excluded from blame */
 const DEFAULT_IGNORE_PATTERNS = [
@@ -92,11 +93,11 @@ function loadGitignorePatterns(): string[] {
 			.split('\n')
 			.map((line) => line.trim())
 			.filter((line) => line && !line.startsWith('#'));
-	} catch {
+	} catch (e) {
+		warn('Failed to load .gitignore', String(e));
 		return [];
 	}
 }
-
 /**
  * Determine if a file should be excluded from blame processing.
  * Checks file size, ignore patterns, and .gitignore rules.

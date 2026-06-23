@@ -165,6 +165,12 @@
           "type": "number",
           "default": 20,
           "description": "%codetrace.config.maxCommits%"
+        },
+        "codetrace.logLevel": {
+          "type": "string",
+          "default": "info",
+          "enum": ["debug", "info", "warn", "error"],
+          "description": "%codetrace.config.logLevel%"
         }
       }
     }

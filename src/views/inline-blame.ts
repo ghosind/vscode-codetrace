@@ -10,6 +10,7 @@ import { GitEngine } from '../core/git-engine';
 import { getConfig } from '../utils/config';
 import { formatRelativeTime } from '../utils/time-utils';
 import { t } from '../utils/i18n';
+import { debug } from '../utils/logger';
 
 export class InlineBlameManager {
     private provider: BlameProvider;
@@ -88,6 +89,7 @@ export class InlineBlameManager {
 
     private scheduleUpdate(editor: vscode.TextEditor): void {
         if (this.updateTimer) { clearTimeout(this.updateTimer); }
+        debug(`schedule blame update for line ${editor.selection.active.line}`);
         this.updateTimer = setTimeout(() => this.updateCursorBlame(editor), 100);
     }
 
@@ -162,7 +164,7 @@ export class InlineBlameManager {
     private async buildUncommittedLabel(document: vscode.TextDocument): Promise<string> {
         const userName = this.cachedUserName || (this.cachedUserName = await this.engine.getUserName());
         let saveTime = '';
-        try { saveTime = formatRelativeTime(fs.statSync(document.fileName).mtime.toISOString()); } catch { /* */ }
+        try { saveTime = formatRelativeTime(fs.statSync(document.fileName).mtime.toISOString()); } catch (e) { debug('stat mtime failed', String(e)); }
         const parts = [userName];
         if (saveTime) { parts.push(saveTime); }
         parts.push(t('codetrace.blame.uncommitted'));

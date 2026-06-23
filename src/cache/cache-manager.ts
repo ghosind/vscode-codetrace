@@ -6,6 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { warn } from '../utils/logger';
 
 /**
  * A single cached commit entry.
@@ -223,8 +224,8 @@ export class CacheManager {
 			}
 
 			fs.writeFileSync(this.diskCachePath, JSON.stringify(serializable), 'utf-8');
-		} catch {
-			// Silently fail disk writes
+		} catch (e) {
+			warn('Failed to save cache to disk', String(e));
 		}
 	}
 
@@ -249,8 +250,8 @@ export class CacheManager {
 				};
 				this.memoryCache.set(key, entry);
 			}
-		} catch {
-			// Silently fail disk reads
+		} catch (e) {
+			warn('Failed to load cache from disk', String(e));
 		}
 	}
 

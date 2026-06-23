@@ -6,6 +6,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { warn } from './logger';
 
 /** Supported locale identifiers */
 type SupportedLocale = 'en' | 'zh-cn';
@@ -44,8 +45,8 @@ function loadLanguagePack(locale: SupportedLocale, context: vscode.ExtensionCont
 			const pack: Record<string, string> = JSON.parse(raw);
 			languagePacks.set(locale, pack);
 		}
-	} catch {
-		// Silently fall back to English if loading fails
+	} catch (e) {
+		warn(`Failed to load language pack: ${locale}`, String(e));
 	}
 }
 

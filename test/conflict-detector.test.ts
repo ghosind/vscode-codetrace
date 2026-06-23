@@ -52,7 +52,18 @@ suite('ConflictDetector', () => {
 
 	test('should handle empty conflicting extensions list', () => {
 		const { hasConflicts } = require('../src/conflict-detector');
-		// in test env no real extensions → should be false
+		assert.strictEqual(hasConflicts(), false);
+	});
+
+	test('should be importable and callable via dynamic import', async () => {
+		const mod = await import('../src/conflict-detector');
+		assert.strictEqual(typeof mod.detectConflicts, 'function');
+		assert.strictEqual(typeof mod.hasConflicts, 'function');
+	});
+
+	test('should return false for hasConflicts in test environment', () => {
+		const { hasConflicts } = require('../src/conflict-detector');
+		// Test env has no conflicting extensions active
 		assert.strictEqual(hasConflicts(), false);
 	});
 });

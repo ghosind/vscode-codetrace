@@ -5,6 +5,7 @@
  */
 import * as vscode from 'vscode';
 import { t } from './utils/i18n';
+import { info, warn } from './utils/logger';
 
 /**
  * Known conflicting extension IDs.
@@ -41,8 +42,10 @@ export async function detectConflicts(): Promise<void> {
 	const conflicts = detectConflictingExtensions();
 
 	if (conflicts.length === 0) {
+		info('No conflicting extensions detected');
 		return;
 	}
+	warn('Conflicting extensions detected', { conflicts });
 
 	const conflictNames = conflicts.map(getExtensionDisplayName).join(', ');
 
@@ -99,8 +102,8 @@ async function disableConflictingFeatures(conflicts: string[]): Promise<void> {
 						false,
 						vscode.ConfigurationTarget.Global
 					);
-				} catch {
-					// Configuration may not exist
+				} catch (e) {
+					warn('Failed to disable GitLens features', String(e));
 				}
 				break;
 
@@ -116,8 +119,8 @@ async function disableConflictingFeatures(conflicts: string[]): Promise<void> {
 						false,
 						vscode.ConfigurationTarget.Global
 					);
-				} catch {
-					// Configuration may not exist
+				} catch (e) {
+					warn('Failed to disable git blame features', String(e));
 				}
 				break;
 		}

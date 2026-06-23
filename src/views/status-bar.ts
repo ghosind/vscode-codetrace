@@ -4,6 +4,7 @@
  */
 import * as vscode from 'vscode';
 import { GitEngine } from '../core/git-engine';
+import { warn } from '../utils/logger';
 
 export class StatusBarManager {
 	private statusBarItem: vscode.StatusBarItem;
@@ -47,7 +48,7 @@ export class StatusBarManager {
 		if (!this.engine) { return; }
 		try {
 			this.cachedBranch = await this.engine.getCurrentBranch() || undefined;
-		} catch { /* keep previous value */ }
+		} catch (e) { warn('refreshBranch failed', String(e)); }
 		this.updateDisplay();
 	}
 

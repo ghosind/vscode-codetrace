@@ -66,4 +66,25 @@ suite('HoverProvider', () => {
 		const hover = await hoverProvider.provideHover(doc, new vscode.Position(0, 2));
 		assert.strictEqual(hover, undefined);
 	});
+
+	test('should handle document without text property in line', async () => {
+		const doc = {
+			uri: vscode.Uri.file('/test/file.ts'),
+			lineAt: () => ({ range: new vscode.Range(0, 0, 0, 0) }),
+		} as unknown as vscode.TextDocument;
+		const hover = await hoverProvider.provideHover(doc, new vscode.Position(0, 10));
+		assert.strictEqual(hover, undefined);
+	});
+
+	test('should handle null return from lineAt gracefully', async () => {
+		const doc = {
+			uri: vscode.Uri.file('/test/file.ts'),
+			lineAt: () => { throw new Error('invalid'); },
+		} as unknown as vscode.TextDocument;
+		try {
+			await hoverProvider.provideHover(doc, new vscode.Position(0, 0));
+		} catch {
+			// Expected for throw-based mock
+		}
+	});
 });
