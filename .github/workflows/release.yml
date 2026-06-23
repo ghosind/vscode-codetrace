@@ -69,15 +69,14 @@ jobs:
       - name: Package VSIX
         run: npm run package
 
-      - name: Publish to VS Code Marketplace
-        if: success()
-        env:
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
-        run: |
-          npx @vscode/vsce publish --packagePath $(ls *.vsix | head -1)
+      # - name: Publish to VS Code Marketplace
+      #   if: success()
+      #   env:
+      #     VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      #   run: |
+      #     npx @vscode/vsce publish --packagePath $(ls *.vsix | head -1)
 
       - name: Upload VSIX as artifact
         uses: actions/upload-artifact@v7
         with:
-          name: codetrace-vsix
           path: '*.vsix'
