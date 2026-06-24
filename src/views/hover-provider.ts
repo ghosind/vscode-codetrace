@@ -8,6 +8,7 @@ import { GitEngine } from '../core/git-engine';
 import { formatRelativeTime, formatAbsoluteTime } from '../utils/time-utils';
 
 const statsCache = new Map<string, string>();
+const bodyCache = new Map<string, string>();
 
 export class CodeTraceHoverProvider implements vscode.HoverProvider {
   private provider: BlameProvider;
@@ -33,30 +34,44 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
       return undefined;
     }
 
-    let stats = statsCache.get(blame.hash);
+    const [stats, body] = await this.fetchCommitDetails(blame.hash);
+    const markdown = this.buildHoverMarkdown(blame, stats, body);
+    const range = document.lineAt(position.line).range;
+    return new vscode.Hover(markdown, range);
+  }
+
+  private async fetchCommitDetails(
+    hash: string
+  ): Promise<[string | undefined, string | undefined]> {
+    let stats = statsCache.get(hash);
     if (!stats) {
-      const s = await this.engine.getCommitStats(blame.hash);
+      const s = await this.engine.getCommitStats(hash);
       if (s) {
-        statsCache.set(blame.hash, s);
+        statsCache.set(hash, s);
         stats = s;
       }
     }
 
-    const markdown = this.buildHoverMarkdown(blame, stats);
-    const range = document.lineAt(position.line).range;
-    return new vscode.Hover(markdown, range);
+    let body = bodyCache.get(hash);
+    if (body === undefined && !bodyCache.has(hash)) {
+      const b = await this.engine.getCommitBody(hash);
+      bodyCache.set(hash, b || '');
+      body = b || '';
+    }
+
+    return [stats, body];
   }
 
   private buildHoverMarkdown(blame: {
     hash: string; author: string; email: string;
     timestamp: string; summary: string; body: string;
-  }, stats?: string): vscode.MarkdownString {
+  }, stats?: string, fullBody?: string): vscode.MarkdownString {
     const m = new vscode.MarkdownString();
     m.isTrusted = true;
     m.supportHtml = true;
 
     this.appendAuthorLine(m, blame);
-    this.appendCommitMessage(m, blame);
+    this.appendCommitMessage(m, blame, fullBody);
     if (stats) {
       m.appendMarkdown(`---  \n\n`);
       m.appendMarkdown(this.colorizeStats(stats) + `  \n\n`);
@@ -79,11 +94,12 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
 
   private appendCommitMessage(m: vscode.MarkdownString, blame: {
     summary: string; body: string;
-  }): void {
+  }, fullBody?: string): void {
     m.appendMarkdown(`---  \n\n`);
     m.appendMarkdown(`**${this.esc(blame.summary)}**  \n\n`);
-    if (blame.body?.trim()) {
-      m.appendMarkdown(`${this.esc(this.truncateBody(blame.body))}  \n\n`);
+    const bodyText = (fullBody || blame.body || '').trim();
+    if (bodyText) {
+      m.appendMarkdown(`${this.esc(bodyText)}  \n\n`);
     }
   }
 
@@ -91,7 +107,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     const short = blame.hash.substring(0, 8);
     m.appendMarkdown(`*${short}* `);
     m.appendMarkdown(`<a href="command:codetrace.copyHash?${encodeURIComponent(JSON.stringify([blame.hash]))}" ` +
-			`title="Copy full hash"><span class="codicon codicon-copy"></span></a>  \n`);
+      `title="Copy full hash"><span class="codicon codicon-copy"></span></a>  \n`);
   }
 
   /** Wrap additions in green and deletions in red using HTML spans. */
@@ -104,10 +120,5 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
   private esc(text: string): string {
     return text.replace(/\\/g, '\\\\').replace(/\*/g, '\\*').replace(/_/g, '\\_')
       .replace(/`/g, '\\`').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
-  }
-
-  private truncateBody(body: string, max = 6): string {
-    const lines = body.split('\n');
-    return lines.length <= max ? body : lines.slice(0, max).join('\n') + '\n\n*(truncated...)*';
   }
 }

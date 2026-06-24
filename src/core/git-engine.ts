@@ -185,6 +185,18 @@ export class GitEngine {
     }
   }
 
+  async getCommitBody(hash: string): Promise<string | undefined> {
+    if (this.disposed) {
+      return undefined;
+    }
+    try {
+      return await this.execCli(['log', '--format=%b', '-1', hash]);
+    } catch (e) {
+      warn('getCommitBody failed', { hash, error: String(e) });
+      return undefined;
+    }
+  }
+
   async getCommitStats(hash: string): Promise<string | undefined> {
     if (this.disposed) {
       return undefined;
