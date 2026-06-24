@@ -74,7 +74,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     this.appendCommitMessage(m, blame, fullBody);
     if (stats) {
       m.appendMarkdown(`---  \n\n`);
-      m.appendMarkdown(this.colorizeStats(stats) + `  \n\n`);
+      m.appendMarkdown(`${stats}  \n\n`);
     }
     this.appendHashLine(m, blame);
     return m;
@@ -108,13 +108,6 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     m.appendMarkdown(`*${short}* `);
     m.appendMarkdown(`<a href="command:codetrace.copyHash?${encodeURIComponent(JSON.stringify([blame.hash]))}" ` +
       `title="Copy full hash"><span class="codicon codicon-copy"></span></a>  \n`);
-  }
-
-  /** Wrap additions in green and deletions in red using HTML spans. */
-  private colorizeStats(stats: string): string {
-    return stats
-      .replace(/(\d+) insertions?\(\+\)/g, '<span style="color:var(--vscode-gitDecoration-addedResourceForeground)">$&</span>')
-      .replace(/(\d+) deletions?\(-\)/g, '<span style="color:var(--vscode-gitDecoration-deletedResourceForeground)">$&</span>');
   }
 
   private esc(text: string): string {
