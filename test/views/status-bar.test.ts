@@ -6,7 +6,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { StatusBarManager } from '../../src/views/status-bar';
-import { GitEngine } from '../../src/core/git-engine';
+import { RepoManager } from '../../src/core/repo-manager';
 
 suite('StatusBarManager', () => {
 	let statusBar: StatusBarManager;
@@ -39,14 +39,14 @@ suite('StatusBarManager', () => {
 
 	test('should set engine and refresh', async () => {
 		const repoPath = path.resolve(__dirname, '..', '..', '..');
-		const engine = new GitEngine(repoPath);
-		await engine.initialize();
+		const repo = new RepoManager();
+		await repo.discoverRoots([__dirname + '/../../..']);
 
-		statusBar.setEngine(engine);
+		statusBar.setRepo(repo);
 		await statusBar.refresh();
 		// Should complete without error
 		assert.ok(true);
-		engine.dispose();
+		repo.dispose();
 	});
 
 	test('should dispose without error', () => {

@@ -105,9 +105,9 @@ suite('BlameProvider', () => {
 	});
 
 	test('should return blame for real file with engine', async () => {
-		const engine = new (require('../../src/core/git-engine').GitEngine)(__dirname + '/../../..');
-		await engine.initialize();
-		provider.setEngine(engine);
+		const repo = new (require('../../src/core/repo-manager').RepoManager)();
+		await repo.discoverRoots([__dirname + '/../../..']);
+		provider.setRepo(repo);
 
 		const mockDoc = {
 			uri: vscode.Uri.file(__dirname + '/../../../src/extension.ts'),
@@ -119,6 +119,6 @@ suite('BlameProvider', () => {
 			assert.ok(result.hash.length > 0);
 			assert.ok(result.author.length > 0);
 		}
-		engine.dispose();
+		repo.dispose();
 	});
 });

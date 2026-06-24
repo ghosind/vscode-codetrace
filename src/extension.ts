@@ -3,7 +3,7 @@
  * Main entry point for activation, deactivation, and command registration.
  */
 import * as vscode from 'vscode';
-import { GitEngine } from './core/git-engine';
+import { RepoManager } from './core/repo-manager';
 import { BlameProvider } from './core/blame-provider';
 import { CacheManager } from './cache/cache-manager';
 import { InlineBlameManager } from './views/inline-blame';
@@ -15,7 +15,7 @@ import { getConfig } from './utils/config';
 import { detectConflicts } from './conflict-detector';
 import { initLogger, info, warn, error as logErr } from './utils/logger';
 
-let gitEngine: GitEngine | undefined;
+let repoManager: RepoManager | undefined;
 let cacheManager: CacheManager | undefined;
 let blameProvider: BlameProvider | undefined;
 let inlineBlameManager: InlineBlameManager | undefined;
@@ -36,15 +36,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     return;
   }
 
-  const repoPath = getWorkspaceRoot();
-  if (!repoPath) {
+  const repoPaths = getWorkspaceRoots();
+  if (repoPaths.length === 0) {
     warn('No workspace root with .git found, skipping activation');
     return;
   }
-  info('Workspace root', { repoPath });
+  info('Workspace roots', { count: repoPaths.length });
 
   try {
-    await initSubsystems(context, repoPath);
+    await initSubsystems(context, repoPaths);
     registerCommands(context);
     registerViews(context);
     registerListeners();
@@ -58,29 +58,32 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
 }
 
-function getWorkspaceRoot(): string | undefined {
+function getWorkspaceRoots(): string[] {
   const folders = vscode.workspace.workspaceFolders;
-  return folders?.length ? folders[0].uri.fsPath : undefined;
+  return folders?.map((f) => f.uri.fsPath) ?? [];
 }
 
-async function initSubsystems(context: vscode.ExtensionContext, repoPath: string): Promise<void> {
+async function initSubsystems(
+  context: vscode.ExtensionContext,
+  repoPaths: string[]
+): Promise<void> {
   info('Initializing subsystems...');
   cacheManager = new CacheManager(context, getConfig().cacheMaxCommits);
   allDisposables.push(cacheManager);
-  gitEngine = new GitEngine(repoPath);
-  await gitEngine.initialize();
-  allDisposables.push(gitEngine);
+  repoManager = new RepoManager();
+  await repoManager.discoverRoots(repoPaths);
+  allDisposables.push(repoManager);
   blameProvider = new BlameProvider(cacheManager);
-  blameProvider.setEngine(gitEngine);
-  inlineBlameManager = new InlineBlameManager(blameProvider, gitEngine);
+  blameProvider.setRepo(repoManager);
+  inlineBlameManager = new InlineBlameManager(blameProvider, repoManager);
   inlineBlameManager.initialize();
-  hoverProvider = new CodeTraceHoverProvider(blameProvider, gitEngine);
+  hoverProvider = new CodeTraceHoverProvider(blameProvider, repoManager);
   lineHistoryProvider = new LineHistoryProvider(blameProvider);
-  lineHistoryProvider.setEngine(gitEngine);
+  lineHistoryProvider.setRepo(repoManager);
   fileHistoryProvider = new FileHistoryProvider();
-  fileHistoryProvider.setEngine(gitEngine);
+  fileHistoryProvider.setRepo(repoManager);
   statusBarManager = new StatusBarManager();
-  statusBarManager.setEngine(gitEngine);
+  statusBarManager.setRepo(repoManager);
   // Wire inline blame to status bar
   inlineBlameManager.onBlameUpdate = (hash: string | undefined): void => {
     statusBarManager?.setCurrentLineHash(hash);
@@ -99,10 +102,10 @@ function registerCommands(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('codetrace.revertFileVersion', async (hash?: string) => {
       const editor = vscode.window.activeTextEditor;
-      if (!editor || !gitEngine || !hash) {
+      if (!editor || !repoManager || !hash) {
         return;
       }
-      const content = await gitEngine.getFileAtCommit(editor.document.uri.fsPath, hash);
+      const content = await repoManager.getFileAtCommit(editor.document.uri.fsPath, hash);
       if (content) {
         const r = new vscode.Range(editor.document.positionAt(0),
           editor.document.positionAt(editor.document.getText().length));
@@ -187,7 +190,7 @@ export function deactivate(): void {
     }
   }
   vscode.commands.executeCommand('setContext', 'codetrace:enabled', false);
-  [gitEngine, cacheManager, blameProvider, inlineBlameManager,
+  [repoManager, cacheManager, blameProvider, inlineBlameManager,
     hoverProvider, lineHistoryProvider, fileHistoryProvider, statusBarManager] =
     [undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined];
   allDisposables.length = 0;

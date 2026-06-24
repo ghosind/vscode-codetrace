@@ -3,7 +3,7 @@
  * Line History and File History webview views with auto-sync.
  */
 import * as vscode from 'vscode';
-import { GitEngine } from '../core/git-engine';
+import { RepoManager } from '../core/repo-manager';
 import { BlameProvider } from '../core/blame-provider';
 import { getLineHistory } from '../core/line-history';
 import { t } from '../utils/i18n';
@@ -20,28 +20,28 @@ function emptyHtml(key: string): string {
  */
 export class LineHistoryProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
-  private engine: GitEngine | undefined;
+  private repo: RepoManager | undefined;
   private blameProvider: BlameProvider;
   private currentFile: string | undefined;
   private pendingLine: number | undefined;
 
   constructor(blameProvider: BlameProvider) { this.blameProvider = blameProvider; }
-  setEngine(engine: GitEngine): void { this.engine = engine; }
+  setRepo(repo: RepoManager): void { this.repo = repo; }
 
   async setFile(filePath: string, lineNumber: number): Promise<void> {
     this.currentFile = filePath;
     this.pendingLine = lineNumber;
-    if (this.view && this.engine) {
+    if (this.view && this.repo) {
       await this.refresh(lineNumber);
     }
   }
 
   async refresh(lineNumber: number): Promise<void> {
-    if (!this.view || !this.engine || !this.currentFile) {
+    if (!this.view || !this.repo || !this.currentFile) {
       return;
     }
     this.showLoading();
-    const history = await getLineHistory(this.engine, this.currentFile, lineNumber, 30);
+    const history = await getLineHistory(this.repo, this.currentFile, lineNumber, 30);
     this.showHistory(history);
   }
 
@@ -49,7 +49,7 @@ export class LineHistoryProvider implements vscode.WebviewViewProvider {
     this.view = webviewView;
     webviewView.webview.options = { enableScripts: true, localResourceRoots: [] };
     // If a file was already set before the view was ready, refresh now
-    if (this.currentFile && this.pendingLine !== undefined && this.engine) {
+    if (this.currentFile && this.pendingLine !== undefined && this.repo) {
       this.refresh(this.pendingLine);
     } else {
       this.showEmpty('codetrace.sidebar.noFile');
@@ -83,13 +83,13 @@ export class LineHistoryProvider implements vscode.WebviewViewProvider {
  */
 export class FileHistoryProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
-  private engine: GitEngine | undefined;
+  private repo: RepoManager | undefined;
   private pendingFilePath: string | undefined;
 
-  setEngine(engine: GitEngine): void { this.engine = engine; }
+  setRepo(repo: RepoManager): void { this.repo = repo; }
 
   async refresh(filePath: string): Promise<void> {
-    if (!this.engine) {
+    if (!this.repo) {
       return;
     }
     if (!this.view) {
@@ -99,7 +99,7 @@ export class FileHistoryProvider implements vscode.WebviewViewProvider {
     }
     this.pendingFilePath = undefined;
     this.view.webview.html = wrapHtml(t('codetrace.view.fileHistory'), emptyHtml('codetrace.sidebar.loading'));
-    const history = await this.engine.getFileHistory(filePath, 50);
+    const history = await this.repo.getFileHistory(filePath, 50);
     const items = history.length > 0
       ? `<div class="scroll-container">${history.map((e) => renderHistoryItem(e)).join('')}</div>`
       : emptyHtml('codetrace.sidebar.noHistory');
@@ -109,7 +109,7 @@ export class FileHistoryProvider implements vscode.WebviewViewProvider {
   resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
     webviewView.webview.options = { enableScripts: true, localResourceRoots: [] };
-    if (this.pendingFilePath && this.engine) {
+    if (this.pendingFilePath && this.repo) {
       this.refresh(this.pendingFilePath);
     } else {
       webviewView.webview.html = wrapHtml(t('codetrace.view.fileHistory'), emptyHtml('codetrace.sidebar.noFile'));

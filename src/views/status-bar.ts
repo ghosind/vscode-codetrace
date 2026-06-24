@@ -3,12 +3,12 @@
  * Displays current branch and the commit hash of the current line.
  */
 import * as vscode from 'vscode';
-import { GitEngine } from '../core/git-engine';
+import { RepoManager } from '../core/repo-manager';
 import { warn } from '../utils/logger';
 
 export class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem;
-  private engine: GitEngine | undefined;
+  private repo: RepoManager | undefined;
   private updateTimer: ReturnType<typeof setTimeout> | undefined;
   private visible = true;
   private currentLineHash: string | undefined;
@@ -25,8 +25,8 @@ export class StatusBarManager {
     this.statusBarItem.text = '$(git-branch) CodeTrace';
   }
 
-  setEngine(engine: GitEngine): void {
-    this.engine = engine;
+  setRepo(repo: RepoManager): void {
+    this.repo = repo;
     this.refreshBranch();
     this.startPeriodicUpdate();
   }
@@ -46,18 +46,20 @@ export class StatusBarManager {
   }
 
   async refresh(): Promise<void> {
-    if (!this.engine || !this.visible) {
+    if (!this.repo || !this.visible) {
       return;
     }
     await this.refreshBranch();
   }
 
   private async refreshBranch(): Promise<void> {
-    if (!this.engine) {
+    if (!this.repo) {
       return;
     }
     try {
-      this.cachedBranch = await this.engine.getCurrentBranch() || undefined;
+      const editor = vscode.window.activeTextEditor;
+      const fp = editor?.document.uri.fsPath || '';
+      this.cachedBranch = await this.repo.getCurrentBranch(fp) || undefined;
     } catch (e) { warn('refreshBranch failed', String(e)); }
     this.updateDisplay();
   }

@@ -4,7 +4,7 @@
  */
 import * as vscode from 'vscode';
 import { BlameProvider } from '../core/blame-provider';
-import { GitEngine } from '../core/git-engine';
+import { RepoManager } from '../core/repo-manager';
 import { formatRelativeTime, formatAbsoluteTime } from '../utils/time-utils';
 
 const statsCache = new Map<string, string>();
@@ -12,11 +12,11 @@ const bodyCache = new Map<string, string>();
 
 export class CodeTraceHoverProvider implements vscode.HoverProvider {
   private provider: BlameProvider;
-  private engine: GitEngine;
+  private repo: RepoManager;
 
-  constructor(provider: BlameProvider, engine: GitEngine) {
+  constructor(provider: BlameProvider, repo: RepoManager) {
     this.provider = provider;
-    this.engine = engine;
+    this.repo = repo;
   }
 
   async provideHover(
@@ -34,18 +34,20 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
       return undefined;
     }
 
-    const [stats, body] = await this.fetchCommitDetails(blame.hash);
+    const fp = document.uri.fsPath;
+    const [stats, body] = await this.fetchCommitDetails(blame.hash, fp);
     const markdown = this.buildHoverMarkdown(blame, stats, body);
     const range = document.lineAt(position.line).range;
     return new vscode.Hover(markdown, range);
   }
 
   private async fetchCommitDetails(
-    hash: string
+    hash: string,
+    filePath: string
   ): Promise<[string | undefined, string | undefined]> {
     let stats = statsCache.get(hash);
     if (!stats) {
-      const s = await this.engine.getCommitStats(hash);
+      const s = await this.repo.getCommitStats(hash, filePath);
       if (s) {
         statsCache.set(hash, s);
         stats = s;
@@ -54,7 +56,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
 
     let body = bodyCache.get(hash);
     if (body === undefined && !bodyCache.has(hash)) {
-      const b = await this.engine.getCommitBody(hash);
+      const b = await this.repo.getCommitBody(hash, filePath);
       bodyCache.set(hash, b || '');
       body = b || '';
     }

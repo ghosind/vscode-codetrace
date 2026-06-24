@@ -3,13 +3,14 @@
  * Coordinates blame operations between the Git engine and cache layer.
  */
 import * as vscode from 'vscode';
-import { GitEngine, BlameResult } from './git-engine';
+import { RepoManager } from './repo-manager';
+import { BlameResult } from './git-engine';
 import { CacheManager, CachedBlameLine } from '../cache/cache-manager';
 import { shouldFilterFile, isSupportedUriScheme } from '../utils/filter';
 import { getConfig } from '../utils/config';
 
 export class BlameProvider {
-  private engine: GitEngine | undefined;
+  private repo: RepoManager | undefined;
   private cache: CacheManager;
   private idleTimer: ReturnType<typeof setTimeout> | undefined;
   private isSleeping = false;
@@ -20,8 +21,8 @@ export class BlameProvider {
   }
 
   /** Set the Git engine and reset idle state. */
-  setEngine(engine: GitEngine): void {
-    this.engine = engine;
+  setRepo(repo: RepoManager): void {
+    this.repo = repo;
     this.isSleeping = false;
     this.isActive = true;
   }
@@ -29,7 +30,7 @@ export class BlameProvider {
   /** Check if the provider can serve blame requests. */
   private canServe(document: vscode.TextDocument): boolean {
     return this.isActive && !this.isSleeping &&
-            !!this.engine && !this.engine.isDisposed() &&
+            !!this.repo && this.repo.checkActive() &&
             isSupportedUriScheme(document.uri) && !shouldFilterFile(document);
   }
 
@@ -47,7 +48,7 @@ export class BlameProvider {
       return this.cachedToBlameResult(cached);
     }
 
-    const results = await this.engine!.getBlame(document.uri.fsPath);
+    const results = await this.repo!.getBlame(document.uri.fsPath);
     this.cacheAllResults(document.uri.fsPath, results);
     return results.find((r) => r.lineNumber === lineNumber);
   }
@@ -67,7 +68,7 @@ export class BlameProvider {
       return resultMap;
     }
 
-    const allResults = await this.engine!.getBlame(document.uri.fsPath);
+    const allResults = await this.repo!.getBlame(document.uri.fsPath);
     this.addResultsToMap(allResults, visibleRange, resultMap);
     return resultMap;
   }
@@ -161,6 +162,6 @@ export class BlameProvider {
       clearTimeout(this.idleTimer);
     }
     this.cache.clearAll();
-    this.engine = undefined;
+    this.repo = undefined;
   }
 }

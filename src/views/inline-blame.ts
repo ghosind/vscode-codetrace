@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { BlameProvider } from '../core/blame-provider';
-import { GitEngine } from '../core/git-engine';
+import { RepoManager } from '../core/repo-manager';
 import { getConfig } from '../utils/config';
 import { formatRelativeTime } from '../utils/time-utils';
 import { t } from '../utils/i18n';
@@ -14,7 +14,7 @@ import { debug } from '../utils/logger';
 
 export class InlineBlameManager {
   private provider: BlameProvider;
-  private engine: GitEngine;
+  private repo: RepoManager;
   private decorationType: vscode.TextEditorDecorationType | undefined;
   private enabled = true;
   private disposables: vscode.Disposable[] = [];
@@ -24,9 +24,9 @@ export class InlineBlameManager {
   private cachedUserName: string | undefined;
   onBlameUpdate: ((hash: string | undefined) => void) | undefined;
 
-  constructor(provider: BlameProvider, engine: GitEngine) {
+  constructor(provider: BlameProvider, repo: RepoManager) {
     this.provider = provider;
-    this.engine = engine;
+    this.repo = repo;
   }
 
   /** Initialize listeners and decoration type. */
@@ -194,7 +194,8 @@ export class InlineBlameManager {
 
   /** Build a label for uncommitted (saved) changes: user name + save time. */
   private async buildUncommittedLabel(document: vscode.TextDocument): Promise<string> {
-    const userName = this.cachedUserName || (this.cachedUserName = await this.engine.getUserName());
+    const userName = this.cachedUserName ||
+      (this.cachedUserName = await this.repo.getUserName(document.fileName));
     let saveTime = '';
     try {
       saveTime = formatRelativeTime(fs.statSync(document.fileName).mtime.toISOString());

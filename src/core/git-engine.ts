@@ -23,6 +23,11 @@ export class GitEngine {
 
   constructor(repoPath: string) { this.repoPath = repoPath; }
 
+  /** Return the repo root path this engine was created for. */
+  getRepoPath(): string {
+    return this.repoPath;
+  }
+
   async initialize(): Promise<void> {
     if (this.disposed) {
       return;
