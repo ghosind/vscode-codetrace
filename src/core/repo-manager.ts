@@ -37,7 +37,27 @@ export class RepoManager {
       const root = this.findRepoRoot(folder);
       if (root) {
         this.getOrCreateEngine(root);
+      } else {
+        this.probeSubdirectories(folder);
       }
+    }
+  }
+
+  /** If the folder itself is not a repo root, probe one level down. */
+  private probeSubdirectories(folder: string): void {
+    try {
+      const entries = fs.readdirSync(folder, { withFileTypes: true });
+      for (const entry of entries) {
+        if (!entry.isDirectory()) {
+          continue;
+        }
+        const subRoot = this.findRepoRoot(path.join(folder, entry.name));
+        if (subRoot) {
+          this.getOrCreateEngine(subRoot);
+        }
+      }
+    } catch {
+      // Ignore read errors
     }
   }
 

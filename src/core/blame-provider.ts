@@ -30,7 +30,7 @@ export class BlameProvider {
   /** Check if the provider can serve blame requests. */
   private canServe(document: vscode.TextDocument): boolean {
     return this.isActive && !this.isSleeping &&
-            !!this.repo && this.repo.checkActive() &&
+            !!this.repo &&
             isSupportedUriScheme(document.uri) && !shouldFilterFile(document);
   }
 
