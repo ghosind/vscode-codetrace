@@ -49,5 +49,6 @@
   "codetrace.general.relativeTime.daysAgo": "{0}天前",
   "codetrace.general.relativeTime.weeksAgo": "{0}周前",
   "codetrace.general.relativeTime.monthsAgo": "{0}个月前",
+  "codetrace.general.relativeTime.yearsAgo": "{0}年前",
   "codetrace.blame.uncommitted": "未提交的更改"
 }

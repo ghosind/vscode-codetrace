@@ -31,6 +31,7 @@ export function formatRelativeTime(isoTimestamp: string): string {
   const days = Math.floor(hours / 24);
   const weeks = Math.floor(days / 7);
   const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
 
   if (seconds < 60) {
     return t('codetrace.general.relativeTime.justNow');
@@ -44,10 +45,13 @@ export function formatRelativeTime(isoTimestamp: string): string {
   if (days < 7) {
     return t('codetrace.general.relativeTime.daysAgo', days);
   }
-  if (weeks < 4) {
+  if (months < 1) {
     return t('codetrace.general.relativeTime.weeksAgo', weeks);
   }
-  return t('codetrace.general.relativeTime.monthsAgo', months > 12 ? 12 : months);
+  if (years < 1) {
+    return t('codetrace.general.relativeTime.monthsAgo', months);
+  }
+  return t('codetrace.general.relativeTime.yearsAgo', years);
 }
 
 /**
