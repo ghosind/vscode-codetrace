@@ -134,9 +134,11 @@ export class BlameProvider {
     this.cache.clearAll();
   }
   reportActivity(): void {
-    if (!this.isSleeping) {
-      this.resetIdleTimer();
+    // Wake from sleep if needed, then reset idle timer
+    if (this.isSleeping) {
+      this.isSleeping = false;
     }
+    this.resetIdleTimer();
   }
 
   /** Invalidate all cached blame entries for a file. */

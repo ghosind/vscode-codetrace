@@ -90,6 +90,7 @@ export class InlineBlameManager {
     }
     this.previousEditor = editor;
     this.lastDecoratedLine = -1;
+    this.provider.reportActivity();
     this.scheduleUpdate(editor);
   }
 
