@@ -17,6 +17,14 @@ export interface CommitLogEntry {
   timestamp: string; summary: string; body: string;
 }
 
+/** Structured commit stat data parsed from `git show --stat`. */
+export interface CommitStats {
+  filesChanged: number;
+  insertions: number;
+  deletions: number;
+  files: Array<{ path: string; changes: string }>;
+}
+
 export class GitEngine {
   private repoPath: string;
   private disposed = false;
@@ -202,15 +210,14 @@ export class GitEngine {
     }
   }
 
-  async getCommitStats(hash: string): Promise<string | undefined> {
+  async getCommitStats(hash: string): Promise<CommitStats | undefined> {
     if (this.disposed) {
       return undefined;
     }
     try {
       const o = await this.execCli(['show', '--stat', '--format=', hash]);
       if (o) {
-        const lines = o.trim().split('\n');
-        return lines[lines.length - 1]?.trim();
+        return parseCommitStats(o);
       }
     } catch (e) {
       warn('getCommitStats failed', { hash, error: String(e) });
@@ -220,6 +227,55 @@ export class GitEngine {
 
   isDisposed(): boolean { return this.disposed; }
   dispose(): void { this.disposed = true; }
+}
+
+export function parseCommitStats(output: string): CommitStats | undefined {
+  const trimmed = output.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+
+  const lines = trimmed.split('\n');
+  const files: Array<{ path: string; changes: string }> = [];
+  let summaryLine = '';
+
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t) {
+      continue;
+    }
+    if (/^\d+ files? changed/.test(t)) {
+      summaryLine = t;
+    } else {
+      const pipeIdx = t.indexOf(' | ');
+      if (pipeIdx > 0) {
+        files.push({
+          path: t.substring(0, pipeIdx).trim(),
+          changes: t.substring(pipeIdx + 3).trim(),
+        });
+      }
+    }
+  }
+
+  const stats: CommitStats = {
+    filesChanged: files.length,
+    insertions: 0,
+    deletions: 0,
+    files,
+  };
+
+  if (summaryLine) {
+    const insMatch = summaryLine.match(/(\d+) insertion/);
+    if (insMatch) {
+      stats.insertions = parseInt(insMatch[1], 10);
+    }
+    const delMatch = summaryLine.match(/(\d+) deletion/);
+    if (delMatch) {
+      stats.deletions = parseInt(delMatch[1], 10);
+    }
+  }
+
+  return stats;
 }
 
 export function parseLogOutput(output: string): CommitLogEntry[] {

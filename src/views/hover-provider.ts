@@ -5,9 +5,10 @@
 import * as vscode from 'vscode';
 import { BlameProvider } from '../core/blame-provider';
 import { RepoManager } from '../core/repo-manager';
+import { CommitStats } from '../core/git-engine';
 import { formatRelativeTime, formatAbsoluteTime } from '../utils/time-utils';
 
-const statsCache = new Map<string, string>();
+const statsCache = new Map<string, CommitStats>();
 const bodyCache = new Map<string, string>();
 
 export class CodeTraceHoverProvider implements vscode.HoverProvider {
@@ -44,7 +45,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
   private async fetchCommitDetails(
     hash: string,
     filePath: string
-  ): Promise<[string | undefined, string | undefined]> {
+  ): Promise<[CommitStats | undefined, string | undefined]> {
     let stats = statsCache.get(hash);
     if (!stats) {
       const s = await this.repo.getCommitStats(hash, filePath);
@@ -67,7 +68,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
   private buildHoverMarkdown(blame: {
     hash: string; author: string; email: string;
     timestamp: string; summary: string; body: string;
-  }, stats?: string, fullBody?: string): vscode.MarkdownString {
+  }, stats?: CommitStats, fullBody?: string): vscode.MarkdownString {
     const m = new vscode.MarkdownString();
     m.isTrusted = true;
     m.supportHtml = true;
@@ -75,8 +76,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     this.appendAuthorLine(m, blame);
     this.appendCommitMessage(m, blame, fullBody);
     if (stats) {
-      m.appendMarkdown(`---  \n\n`);
-      m.appendMarkdown(`${stats}  \n\n`);
+      this.appendStats(m, stats);
     }
     this.appendHashLine(m, blame);
     return m;
@@ -110,6 +110,23 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     m.appendMarkdown(`*${short}* `);
     m.appendMarkdown(`<a href="command:codetrace.copyHash?${encodeURIComponent(JSON.stringify([blame.hash]))}" ` +
       `title="Copy full hash"><span class="codicon codicon-copy"></span></a>  \n`);
+  }
+
+  private appendStats(m: vscode.MarkdownString, stats: CommitStats): void {
+    m.appendMarkdown(`---  \n\n`);
+    m.appendMarkdown(`<span>${stats.filesChanged} file${stats.filesChanged === 1 ? '' : 's'} changed</span>`);
+
+    if (stats.insertions > 0) {
+      m.appendMarkdown(`,&nbsp;<span style="color:var(--vscode-scmGraph-historyItemHoverAdditionsForeground);">${
+        stats.insertions
+      } insertion${stats.insertions === 1 ? '' : 's'}(+)</span>`);
+    }
+    if (stats.deletions > 0) {
+      m.appendMarkdown(`,&nbsp;<span style="color:var(--vscode-scmGraph-historyItemHoverDeletionsForeground);">${
+        stats.deletions
+      } deletion${stats.deletions === 1 ? '' : 's'}(-)</span>`);
+    }
+    m.appendMarkdown(`  \n\n`);
   }
 
   private esc(text: string): string {

@@ -3,7 +3,7 @@
  * Covers: initialization, blame parsing, file history, diff, edge cases.
  */
 import * as assert from 'assert';
-import { GitEngine, parseLogOutput } from '../../src/core/git-engine';
+import { GitEngine, parseLogOutput, parseCommitStats } from '../../src/core/git-engine';
 import { parseBlamePorcelain } from '../../src/core/blame-parser';
 
 suite('GitEngine', () => {
@@ -137,7 +137,7 @@ suite('GitEngine', () => {
 	test('should get commit stats for HEAD', async () => {
 		await engine.initialize();
 		const stats = await engine.getCommitStats('HEAD');
-		assert.ok(stats === undefined || typeof stats === 'string');
+		assert.ok(stats === undefined || (stats !== null && typeof stats === 'object'));
 	});
 
 	test('should get user name', async () => {
@@ -167,5 +167,59 @@ suite('GitEngine', () => {
 		assert.strictEqual(await engine.getCommitStats('HEAD'), undefined);
 		assert.strictEqual(await engine.getLatestHash(), undefined);
 		assert.strictEqual(await engine.getCurrentBranch(), undefined);
+	});
+});
+
+suite('parseCommitStats', () => {
+	test('should parse multi-file stat output', () => {
+		const o = [
+			' src/foo.ts | 12 ++++++++++++',
+			' src/bar.ts | 5 ++---',
+			' 2 files changed, 15 insertions(+), 5 deletions(-)',
+		].join('\n');
+		const s = parseCommitStats(o);
+		assert.ok(s);
+		assert.strictEqual(s!.filesChanged, 2);
+		assert.strictEqual(s!.insertions, 15);
+		assert.strictEqual(s!.deletions, 5);
+		assert.strictEqual(s!.files.length, 2);
+	});
+
+	test('should parse single-file stat', () => {
+		const o = [
+			' src/ext.ts | 3 +++',
+			' 1 file changed, 3 insertions(+)',
+		].join('\n');
+		const s = parseCommitStats(o);
+		assert.ok(s);
+		assert.strictEqual(s!.filesChanged, 1);
+		assert.strictEqual(s!.insertions, 3);
+		assert.strictEqual(s!.deletions, 0);
+	});
+
+	test('should parse deletion-only stat', () => {
+		const o = [
+			' src/old.ts | 8 --------',
+			' 1 file changed, 8 deletions(-)',
+		].join('\n');
+		const s = parseCommitStats(o);
+		assert.ok(s);
+		assert.strictEqual(s!.insertions, 0);
+		assert.strictEqual(s!.deletions, 8);
+	});
+
+	test('should return undefined for empty input', () => {
+		assert.strictEqual(parseCommitStats(''), undefined);
+	});
+
+	test('should return undefined for whitespace-only', () => {
+		assert.strictEqual(parseCommitStats('  \n  '), undefined);
+	});
+
+	test('should handle output with no summary line', () => {
+		const s = parseCommitStats(' src/foo.ts | 3 +++');
+		assert.ok(s);
+		assert.strictEqual(s!.filesChanged, 1);
+		assert.strictEqual(s!.insertions, 0);
 	});
 });

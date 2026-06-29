@@ -170,12 +170,12 @@ suite('RepoManager', () => {
     }
   });
 
-  test('getCommitStats should return string or undefined', async () => {
+  test('getCommitStats should return object or undefined', async () => {
     const fp = path.join(WORKSPACE_ROOT, 'src', 'extension.ts');
     const hash = await repo.getLatestHash(fp);
     if (hash) {
       const stats = await repo.getCommitStats(hash, fp);
-      assert.ok(stats === undefined || typeof stats === 'string');
+      assert.ok(stats === undefined || (stats !== null && typeof stats === 'object'));
     }
   });
 

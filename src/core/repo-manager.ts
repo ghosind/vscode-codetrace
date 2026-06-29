@@ -4,7 +4,7 @@
  */
 import * as fs from 'fs';
 import * as path from 'path';
-import { GitEngine, BlameResult, CommitLogEntry } from './git-engine';
+import { GitEngine, BlameResult, CommitLogEntry, CommitStats } from './git-engine';
 import { debug } from '../utils/logger';
 
 export class RepoManager {
@@ -117,7 +117,7 @@ export class RepoManager {
     return e ? e.getCommitBody(hash) : undefined;
   }
 
-  async getCommitStats(hash: string, filePath: string): Promise<string | undefined> {
+  async getCommitStats(hash: string, filePath: string): Promise<CommitStats | undefined> {
     const e = await this.getEngineFor(filePath);
     return e ? e.getCommitStats(hash) : undefined;
   }
