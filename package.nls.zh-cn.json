@@ -6,7 +6,7 @@
   "codetrace.command.showFileHistory": "CodeTrace: 查看文件历史",
   "codetrace.command.revertFileVersion": "CodeTrace: 还原文件版本",
   "codetrace.command.showSidebar": "CodeTrace: 显示侧边栏",
-  "codetrace.command.hideStatusBar": "CodeTrace: 隐藏状态栏",
+  "codetrace.command.toggleStatusBar": "CodeTrace: 显示/隐藏状态栏",
   "codetrace.command.detectConflicts": "CodeTrace: 检测插件冲突",
   "codetrace.config.enabled": "全局启用/禁用 CodeTrace",
   "codetrace.config.idleSleep": "启用闲置休眠以减少资源占用",

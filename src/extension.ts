@@ -114,7 +114,7 @@ function registerCommands(context: vscode.ExtensionContext): void {
     }),
     vscode.commands.registerCommand('codetrace.showSidebar', () =>
       vscode.commands.executeCommand('workbench.view.extension.codetrace-sidebar')),
-    vscode.commands.registerCommand('codetrace.hideStatusBar', () => statusBarManager?.hide()),
+    vscode.commands.registerCommand('codetrace.toggleStatusBar', () => statusBarManager?.toggle()),
     vscode.commands.registerCommand('codetrace.detectConflicts', () => detectConflicts()),
     vscode.commands.registerCommand('codetrace.copyHash', (hash?: string) => {
       if (hash) {

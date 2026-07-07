@@ -40,9 +40,18 @@ export class StatusBarManager {
     this.visible = true;
     this.statusBarItem.show();
   }
+
   hide(): void {
     this.visible = false;
     this.statusBarItem.hide();
+  }
+
+  toggle(): void {
+    if (this.visible) {
+      this.hide();
+    } else {
+      this.show();
+    }
   }
 
   async refresh(): Promise<void> {

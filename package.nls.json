@@ -6,7 +6,7 @@
   "codetrace.command.showFileHistory": "CodeTrace: Show File History",
   "codetrace.command.revertFileVersion": "CodeTrace: Revert File Version",
   "codetrace.command.showSidebar": "CodeTrace: Show Sidebar",
-  "codetrace.command.hideStatusBar": "CodeTrace: Hide Status Bar",
+  "codetrace.command.toggleStatusBar": "CodeTrace: Toggle Status Bar",
   "codetrace.command.detectConflicts": "CodeTrace: Detect Plugin Conflicts",
   "codetrace.config.enabled": "Enable/disable CodeTrace globally",
   "codetrace.config.idleSleep": "Enable idle sleep to reduce resource usage",

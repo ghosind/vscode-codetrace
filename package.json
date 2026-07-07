@@ -72,8 +72,8 @@
         "title": "%codetrace.command.showSidebar%"
       },
       {
-        "command": "codetrace.hideStatusBar",
-        "title": "%codetrace.command.hideStatusBar%"
+        "command": "codetrace.toggleStatusBar",
+        "title": "%codetrace.command.toggleStatusBar%"
       },
       {
         "command": "codetrace.detectConflicts",
