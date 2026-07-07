@@ -24,6 +24,7 @@
     "code-trace"
   ],
   "activationEvents": [
+    "onStartupFinished",
     "workspaceContains:**/.git"
   ],
   "main": "./dist/extension.js",
