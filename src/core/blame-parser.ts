@@ -4,6 +4,24 @@
  */
 import { BlameResult, CommitLogEntry } from './git-engine';
 
+/** Cached commit attributes keyed by hash. */
+type BlameAttrs = Pick<BlameResult, 'author' | 'email' | 'timestamp' | 'summary'>;
+
+/** Internal state for building blame results during porcelain parsing. */
+interface ParseState {
+  current: Partial<BlameResult> & { numLines?: number };
+  lineNumber: number;
+  commitProcessed: boolean;
+}
+
+/** Bundled mutable context shared across parser helper functions. */
+interface BlameContext {
+  state: ParseState;
+  results: BlameResult[];
+  attrCache: Map<string, BlameAttrs>;
+  lastAttrs: BlameAttrs;
+}
+
 /**
  * Parse `git blame --porcelain` output into structured results.
  * @param output - Raw porcelain blame output
@@ -12,108 +30,127 @@ import { BlameResult, CommitLogEntry } from './git-engine';
 export function parseBlamePorcelain(output: string): BlameResult[] {
   const results: BlameResult[] = [];
   const lines = output.split('\n');
-
-  let current: Partial<BlameResult> & { numLines?: number } = {};
-  let lineNumber = 0;
-  let commitProcessed = false;
-  // Cache attributes per commit hash for non-contiguous same-commit blocks
-  type Attrs = Pick<BlameResult, 'author' | 'email' | 'timestamp' | 'summary'>;
-  const attrCache = new Map<string, Attrs>();
-  const lastAttrs: Attrs = { author: '', email: '', timestamp: '', summary: '' };
+  const ctx: BlameContext = {
+    state: { current: {}, lineNumber: 0, commitProcessed: false },
+    results,
+    attrCache: new Map(),
+    lastAttrs: { author: '', email: '', timestamp: '', summary: '' },
+  };
 
   for (const line of lines) {
-    if (processHeaderLine(line)) {
+    if (tryParseHeader(line, ctx)) {
       continue;
     }
-    if (!commitProcessed) {
-      parseAttr(line);
+    if (!ctx.state.commitProcessed) {
+      parseAttributeLine(line, ctx);
     }
   }
 
-  flushCurrent();
+  flushCurrentCommit(ctx);
   results.sort((a, b) => a.lineNumber - b.lineNumber);
   return results;
+}
 
-  /** Returns cached attrs for a hash, creating an empty entry if not found. */
-  function getCachedAttrs(hash: string): Attrs {
-    let a = attrCache.get(hash);
-    if (!a) {
-      a = { author: '', email: '', timestamp: '', summary: '' };
-      attrCache.set(hash, a);
-    }
-    return a;
+/** Get or create cached attributes for a commit hash. */
+function getCachedAttrs(ctx: BlameContext, hash: string): BlameAttrs {
+  let attrs = ctx.attrCache.get(hash);
+  if (!attrs) {
+    attrs = { author: '', email: '', timestamp: '', summary: '' };
+    ctx.attrCache.set(hash, attrs);
   }
+  return attrs;
+}
 
-  function processHeaderLine(line: string): boolean {
-    const fm = line.match(/^([0-9a-f]{40})\s+(\d+)\s+(\d+)\s+(\d+)/);
-    if (fm) {
-      handleFullHeader(fm[1], parseInt(fm[3]), parseInt(fm[4]));
-      return true;
-    }
-    const cm = line.match(/^([0-9a-f]{40})\s+(\d+)\s+(\d+)$/);
-    if (cm) {
-      handleContHeader(cm[1], parseInt(cm[3]));
-      return true;
-    }
-    return false;
+/**
+ * Try to parse a header line. Returns true if the line was a header.
+ * Handles both full (4-field) and continuation (3-field) header formats.
+ */
+function tryParseHeader(line: string, ctx: BlameContext): boolean {
+  const fullMatch = line.match(/^([0-9a-f]{40})\s+(\d+)\s+(\d+)\s+(\d+)/);
+  if (fullMatch) {
+    handleFullHeader(fullMatch[1], parseInt(fullMatch[3]), parseInt(fullMatch[4]), ctx);
+    return true;
   }
-
-  function handleFullHeader(hash: string, finalLine: number, numLines: number): void {
-    flushCurrent();
-    const attrs = getCachedAttrs(hash);
-    current = { hash, numLines, author: attrs.author, email: attrs.email,
-      timestamp: attrs.timestamp, summary: attrs.summary };
-    lineNumber = finalLine - 1;
-    commitProcessed = false;
+  const contMatch = line.match(/^([0-9a-f]{40})\s+(\d+)\s+(\d+)$/);
+  if (contMatch) {
+    handleContinuationHeader(contMatch[1], parseInt(contMatch[3]), ctx);
+    return true;
   }
+  return false;
+}
 
-  function handleContHeader(hash: string, finalLine: number): void {
-    flushCurrent();
-    const attrs = getCachedAttrs(hash);
-    results.push({ hash, author: attrs.author || '', email: attrs.email || '',
-      timestamp: attrs.timestamp || '', summary: attrs.summary || '',
-      body: '', lineNumber: finalLine - 1 });
-    commitProcessed = true;
+/** Process a full header line (4-field format). */
+function handleFullHeader(
+  hash: string, finalLine: number, numLines: number, ctx: BlameContext
+): void {
+  flushCurrentCommit(ctx);
+  const attrs = getCachedAttrs(ctx, hash);
+  ctx.state.current = {
+    hash, numLines,
+    author: attrs.author, email: attrs.email,
+    timestamp: attrs.timestamp, summary: attrs.summary,
+  };
+  ctx.state.lineNumber = finalLine - 1;
+  ctx.state.commitProcessed = false;
+}
+
+/** Process a continuation header line (3-field format). */
+function handleContinuationHeader(
+  hash: string, finalLine: number, ctx: BlameContext
+): void {
+  flushCurrentCommit(ctx);
+  const attrs = getCachedAttrs(ctx, hash);
+  ctx.results.push({
+    hash, author: attrs.author || '', email: attrs.email || '',
+    timestamp: attrs.timestamp || '', summary: attrs.summary || '',
+    body: '', lineNumber: finalLine - 1,
+  });
+  ctx.state.commitProcessed = true;
+}
+
+/** Flush the current commit being built into results. */
+function flushCurrentCommit(ctx: BlameContext): void {
+  const { current, lineNumber, commitProcessed } = ctx.state;
+  if (!current.hash || commitProcessed) {
+    return;
   }
-
-  /** Flush the current commit being built into results */
-  function flushCurrent(): void {
-    if (!current.hash || commitProcessed) {
-      return;
-    }
-    const numLines = current.numLines || 1;
-    for (let i = 0; i < numLines; i++) {
-      results.push({
-        hash: current.hash, author: current.author || '',
-        email: current.email || '', timestamp: current.timestamp || '',
-        summary: current.summary || '', body: '',
-        lineNumber: lineNumber + i,
-      });
-    }
+  const numLines = current.numLines || 1;
+  for (let i = 0; i < numLines; i++) {
+    ctx.results.push({
+      hash: current.hash, author: current.author || '',
+      email: current.email || '', timestamp: current.timestamp || '',
+      summary: current.summary || '', body: '',
+      lineNumber: lineNumber + i,
+    });
   }
+}
 
-  /** Parse a single attribute line, updating current, lastAttrs, and attrCache. */
-  function parseAttr(line: string): void {
-    const c = current;
-    const set = (k: keyof Attrs, v: string): void => {
-      (c as Record<string, string>)[k] = v;
-      lastAttrs[k] = v;
-      const cached = c.hash ? attrCache.get(c.hash) : undefined;
-      if (cached) {
-        cached[k] = v;
-      }
-    };
-    if (line.startsWith('author ')) {
-      set('author', line.substring(7));
-    }
-    else if (line.startsWith('author-mail ')) {
-      set('email', line.substring(12).replace(/[<>]/g, ''));
-    }
-    else if (line.startsWith('author-time ')) {
-      set('timestamp', new Date(parseInt(line.substring(12), 10) * 1000).toISOString());
-    }
-    else if (line.startsWith('summary ')) {
-      set('summary', line.substring(8));
+/**
+ * Parse a single attribute line and update current commit, lastAttrs, and attrCache.
+ * Handles: author, author-mail, author-time, summary.
+ */
+function parseAttributeLine(line: string, ctx: BlameContext): void {
+  if (line.startsWith('author ')) {
+    setBlameAttr(ctx, 'author', line.substring(7));
+  } else if (line.startsWith('author-mail ')) {
+    setBlameAttr(ctx, 'email', line.substring(12).replace(/[<>]/g, ''));
+  } else if (line.startsWith('author-time ')) {
+    const ts = new Date(parseInt(line.substring(12), 10) * 1000).toISOString();
+    setBlameAttr(ctx, 'timestamp', ts);
+  } else if (line.startsWith('summary ')) {
+    setBlameAttr(ctx, 'summary', line.substring(8));
+  }
+}
+
+/** Set a blame attribute on the current commit, lastAttrs, and the attrCache entry. */
+function setBlameAttr(ctx: BlameContext, key: keyof BlameAttrs, value: string): void {
+  const { current } = ctx.state;
+  (current as Record<string, string>)[key] = value;
+  ctx.lastAttrs[key] = value;
+  if (current.hash) {
+    const cached = ctx.attrCache.get(current.hash);
+    if (cached) {
+      cached[key] = value;
     }
   }
 }

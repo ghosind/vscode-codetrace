@@ -9,6 +9,12 @@ import { getLineHistory } from '../core/line-history';
 import { t } from '../utils/i18n';
 import { wrapHtml, renderHistoryItem } from '../utils/html-templates';
 
+/** Maximum number of commits to show in the Line History panel. */
+const LINE_HISTORY_MAX_COUNT = 30;
+
+/** Maximum number of commits to show in the File History panel. */
+const FILE_HISTORY_MAX_COUNT = 50;
+
 /** Common empty-state HTML. */
 function emptyHtml(key: string): string {
   return `<div class="empty-state">${t(key)}</div>`;
@@ -41,7 +47,9 @@ export class LineHistoryProvider implements vscode.WebviewViewProvider {
       return;
     }
     this.showLoading();
-    const history = await getLineHistory(this.repo, this.currentFile, lineNumber, 30);
+    const history = await getLineHistory(
+      this.repo, this.currentFile, lineNumber, LINE_HISTORY_MAX_COUNT
+    );
     this.showHistory(history);
   }
 
@@ -99,7 +107,7 @@ export class FileHistoryProvider implements vscode.WebviewViewProvider {
     }
     this.pendingFilePath = undefined;
     this.view.webview.html = wrapHtml(t('codetrace.view.fileHistory'), emptyHtml('codetrace.sidebar.loading'));
-    const history = await this.repo.getFileHistory(filePath, 50);
+    const history = await this.repo.getFileHistory(filePath, FILE_HISTORY_MAX_COUNT);
     const items = history.length > 0
       ? `<div class="scroll-container">${history.map((e) => renderHistoryItem(e)).join('')}</div>`
       : emptyHtml('codetrace.sidebar.noHistory');

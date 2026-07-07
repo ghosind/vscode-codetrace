@@ -6,10 +6,11 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 import { CacheManager, CachedBlameLine } from '../../src/cache/cache-manager';
 
 /** Unique temp path per test run to avoid disk cache pollution. */
-const TEST_CACHE_DIR = `/tmp/codetrace-test-cache-${Date.now()}`;
+const TEST_CACHE_DIR = path.join(os.tmpdir(), `codetrace-test-cache-${Date.now()}`);
 
 suite('CacheManager', () => {
 	let cache: CacheManager;

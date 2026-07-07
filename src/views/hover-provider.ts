@@ -8,12 +8,18 @@ import { RepoManager } from '../core/repo-manager';
 import { CommitStats } from '../core/git-engine';
 import { formatRelativeTime, formatAbsoluteTime } from '../utils/time-utils';
 
-const statsCache = new Map<string, CommitStats>();
-const bodyCache = new Map<string, string>();
+/** Maximum number of cached stats/body entries per cache. */
+const MAX_CACHE_ENTRIES = 50;
+
+/** Prefix used by git for uncommitted (working-tree) hashes. */
+const UNCOMMITTED_HASH_PREFIX = '0000000';
 
 export class CodeTraceHoverProvider implements vscode.HoverProvider {
   private provider: BlameProvider;
   private repo: RepoManager;
+  /** Size-bounded LRU caches for commit stats and bodies. */
+  private statsCache = new Map<string, CommitStats>();
+  private bodyCache = new Map<string, string>();
 
   constructor(provider: BlameProvider, repo: RepoManager) {
     this.provider = provider;
@@ -31,7 +37,7 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     }
 
     const blame = await this.provider.getBlameForLine(document, position.line);
-    if (!blame || blame.hash.startsWith('0000000')) {
+    if (!blame || blame.hash.startsWith(UNCOMMITTED_HASH_PREFIX)) {
       return undefined;
     }
 
@@ -46,23 +52,35 @@ export class CodeTraceHoverProvider implements vscode.HoverProvider {
     hash: string,
     filePath: string
   ): Promise<[CommitStats | undefined, string | undefined]> {
-    let stats = statsCache.get(hash);
+    let stats = this.statsCache.get(hash);
     if (!stats) {
       const s = await this.repo.getCommitStats(hash, filePath);
       if (s) {
-        statsCache.set(hash, s);
+        this.evictOldestIfNeeded(this.statsCache);
+        this.statsCache.set(hash, s);
         stats = s;
       }
     }
 
-    let body = bodyCache.get(hash);
-    if (body === undefined && !bodyCache.has(hash)) {
+    let body = this.bodyCache.get(hash);
+    if (body === undefined && !this.bodyCache.has(hash)) {
       const b = await this.repo.getCommitBody(hash, filePath);
-      bodyCache.set(hash, b || '');
+      this.evictOldestIfNeeded(this.bodyCache);
+      this.bodyCache.set(hash, b || '');
       body = b || '';
     }
 
     return [stats, body];
+  }
+
+  /** Evict the oldest entry from a map if it exceeds the max size. */
+  private evictOldestIfNeeded<V>(map: Map<string, V>): void {
+    if (map.size >= MAX_CACHE_ENTRIES) {
+      const firstKey = map.keys().next().value;
+      if (firstKey !== undefined) {
+        map.delete(firstKey);
+      }
+    }
   }
 
   private buildHoverMarkdown(blame: {

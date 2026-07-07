@@ -126,9 +126,7 @@ async function disableConflictingFeatures(conflicts: string[]): Promise<void> {
     }
   }
 
-  vscode.window.showInformationMessage(
-    'CodeTrace: Conflicting features have been disabled. Please reload VS Code for changes to take effect.'
-  );
+  vscode.window.showInformationMessage(t('codetrace.conflict.reloadMessage'));
 }
 
 /**

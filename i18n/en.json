@@ -50,5 +50,6 @@
   "codetrace.general.relativeTime.weeksAgo": "{0} weeks ago",
   "codetrace.general.relativeTime.monthsAgo": "{0} months ago",
   "codetrace.general.relativeTime.yearsAgo": "{0} years ago",
-  "codetrace.blame.uncommitted": "Uncommitted Changes"
+  "codetrace.blame.uncommitted": "Uncommitted Changes",
+  "codetrace.conflict.reloadMessage": "CodeTrace: Conflicting features have been disabled. Please reload VS Code for changes to take effect."
 }

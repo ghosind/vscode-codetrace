@@ -6,6 +6,15 @@ import * as vscode from 'vscode';
 import { RepoManager } from '../core/repo-manager';
 import { warn } from '../utils/logger';
 
+/** Alignment priority for the status bar item (high = rightmost). */
+const STATUS_BAR_PRIORITY = 100;
+
+/** Interval (ms) for periodic branch refresh. */
+const BRANCH_REFRESH_INTERVAL_MS = 30000;
+
+/** Fallback text displayed when branch info is unavailable. */
+const UNKNOWN_BRANCH_TEXT = '--';
+
 export class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem;
   private repo: RepoManager | undefined;
@@ -17,7 +26,7 @@ export class StatusBarManager {
   constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Right,
-      100
+      STATUS_BAR_PRIORITY
     );
     this.statusBarItem.name = 'CodeTrace';
     this.statusBarItem.command = 'codetrace.showSidebar';
@@ -75,7 +84,7 @@ export class StatusBarManager {
 
   private updateDisplay(): void {
     let text = '$(git-branch) ';
-    text += this.cachedBranch || '--';
+    text += this.cachedBranch || UNKNOWN_BRANCH_TEXT;
     if (this.currentLineHash) {
       text += ` $(git-commit) ${this.currentLineHash.substring(0, 8)}`;
     }
@@ -88,7 +97,7 @@ export class StatusBarManager {
     }
     this.updateTimer = setInterval(() => {
       this.refresh();
-    }, 30000);
+    }, BRANCH_REFRESH_INTERVAL_MS);
   }
 
   dispose(): void {

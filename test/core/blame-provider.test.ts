@@ -6,6 +6,7 @@ import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { BlameProvider } from '../../src/core/blame-provider';
 import { CacheManager } from '../../src/cache/cache-manager';
+import { RepoManager } from '../../src/core/repo-manager';
 
 suite('BlameProvider', () => {
 	let provider: BlameProvider;
@@ -105,7 +106,7 @@ suite('BlameProvider', () => {
 	});
 
 	test('should return blame for real file with engine', async () => {
-		const repo = new (require('../../src/core/repo-manager').RepoManager)();
+		const repo = new RepoManager();
 		await repo.discoverRoots([__dirname + '/../../..']);
 		provider.setRepo(repo);
 

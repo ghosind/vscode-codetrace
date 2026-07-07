@@ -12,6 +12,27 @@ import { formatRelativeTime } from '../utils/time-utils';
 import { t } from '../utils/i18n';
 import { debug } from '../utils/logger';
 
+/** Prefix used by git for uncommitted (working-tree) hashes. */
+const UNCOMMITTED_HASH_PREFIX = '0000000';
+
+/** Author name placeholder used by git for uncommitted changes. */
+const UNCOMMITTED_AUTHOR_MARKER = 'Not Committed Yet';
+
+/** Fallback color used when the blame style is set to 'auto' (dark theme). */
+const AUTO_DARK_COLOR = '#999999';
+
+/** Fallback color used when the blame style is set to 'auto' (light theme). */
+const AUTO_LIGHT_COLOR = '#888888';
+
+/** The 'auto' color mode keyword. */
+const AUTO_BLAME_COLOR = 'auto';
+
+/** Bullet separator used in blame labels. */
+const BLAME_LABEL_SEPARATOR = ' \u2022 ';
+
+/** Debounce delay (ms) before fetching blame after cursor moves. */
+const BLAME_UPDATE_DEBOUNCE_MS = 100;
+
 export class InlineBlameManager {
   private provider: BlameProvider;
   private repo: RepoManager;
@@ -99,7 +120,10 @@ export class InlineBlameManager {
       clearTimeout(this.updateTimer);
     }
     debug(`schedule blame update for line ${editor.selection.active.line}`);
-    this.updateTimer = setTimeout(() => this.updateCursorBlame(editor), 100);
+    this.updateTimer = setTimeout(
+      () => this.updateCursorBlame(editor),
+      BLAME_UPDATE_DEBOUNCE_MS
+    );
   }
 
   /**
@@ -116,7 +140,7 @@ export class InlineBlameManager {
     }
 
     const blame = await this.provider.getBlameForLine(editor.document, cursorLine);
-    this.onBlameUpdate?.(blame?.hash.startsWith('0000000') ? undefined : blame?.hash);
+    this.onBlameUpdate?.(blame?.hash.startsWith(UNCOMMITTED_HASH_PREFIX) ? undefined : blame?.hash);
 
     if (this.shouldClearBlame(blame, editor.document)) {
       editor.setDecorations(this.getDecorationType(), []);
@@ -190,7 +214,7 @@ export class InlineBlameManager {
     if (summary) {
       parts.push(summary);
     }
-    return parts.join(' \u2022 ');
+    return parts.join(BLAME_LABEL_SEPARATOR);
   }
 
   /** Build a label for uncommitted (saved) changes: user name + save time. */
@@ -208,7 +232,7 @@ export class InlineBlameManager {
       parts.push(saveTime);
     }
     parts.push(t('codetrace.blame.uncommitted'));
-    return parts.join(' \u2022 ');
+    return parts.join(BLAME_LABEL_SEPARATOR);
   }
 
   /** Returns true if blame should be cleared (null/undefined result, or uncommitted+unsaved). */
@@ -219,12 +243,12 @@ export class InlineBlameManager {
     if (!blame) {
       return true;
     }
-    return !!(blame.hash?.startsWith('0000000') && doc.isDirty);
+    return !!(blame.hash?.startsWith(UNCOMMITTED_HASH_PREFIX) && doc.isDirty);
   }
 
   /** Check if a blame line represents uncommitted working-tree changes. */
   private isUncommitted(hash: string, author?: string): boolean {
-    return hash.startsWith('0000000') || author === 'Not Committed Yet';
+    return hash.startsWith(UNCOMMITTED_HASH_PREFIX) || author === UNCOMMITTED_AUTHOR_MARKER;
   }
 
   /** Safely format a timestamp to relative time, returning '' on invalid input. */
@@ -256,9 +280,9 @@ export class InlineBlameManager {
   private getBlameColor(): string {
     const config = getConfig();
     let baseColor = config.blame.color;
-    if (baseColor === 'auto') {
+    if (baseColor === AUTO_BLAME_COLOR) {
       const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
-      baseColor = isDark ? '#999999' : '#888888';
+      baseColor = isDark ? AUTO_DARK_COLOR : AUTO_LIGHT_COLOR;
     }
     if (config.blame.opacity < 1 && baseColor.startsWith('#')) {
       return this.hexToRgba(baseColor, config.blame.opacity);

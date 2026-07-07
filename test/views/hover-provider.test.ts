@@ -88,36 +88,36 @@ suite('HoverProvider', () => {
 		}
 	});
 
-      test('should return hover for real committed file', async () => {
-        const fp = path.resolve(__dirname, '..', '..', '..', 'src', 'extension.ts');
-        const repo = new RepoManager();
-        await repo.discoverRoots([path.resolve(__dirname, '..', '..', '..')]);
-        const mockContext = {
-          storageUri: vscode.Uri.file(`/tmp/codetrace-hover-test-real-${Date.now()}`),
-          extensionPath: path.resolve(__dirname, '..', '..', '..', '..'),
-        } as unknown as vscode.ExtensionContext;
-        const cache = new CacheManager(mockContext, 5);
-        const bp = new BlameProvider(cache);
-        bp.setRepo(repo);
-        const hp = new CodeTraceHoverProvider(bp, repo);
+	test('should return hover for real committed file', async () => {
+		const fp = path.resolve(__dirname, '..', '..', '..', 'src', 'extension.ts');
+		const repo = new RepoManager();
+		await repo.discoverRoots([path.resolve(__dirname, '..', '..', '..')]);
+		const mockContext = {
+			storageUri: vscode.Uri.file(`/tmp/codetrace-hover-test-real-${Date.now()}`),
+			extensionPath: path.resolve(__dirname, '..', '..', '..', '..'),
+		} as unknown as vscode.ExtensionContext;
+		const cache = new CacheManager(mockContext, 5);
+		const bp = new BlameProvider(cache);
+		bp.setRepo(repo);
+		const hp = new CodeTraceHoverProvider(bp, repo);
 
-        const doc = {
-          uri: vscode.Uri.file(fp),
-          lineAt: (line: number) => ({
-            text: 'import * as vscode from \'vscode\';',
-            range: new vscode.Range(line, 0, line, 50),
-          }),
-        } as unknown as vscode.TextDocument;
+		const doc = {
+			uri: vscode.Uri.file(fp),
+			lineAt: (line: number) => ({
+				text: 'import * as vscode from \'vscode\';',
+				range: new vscode.Range(line, 0, line, 50),
+			}),
+		} as unknown as vscode.TextDocument;
 
-        // Cursor at end of line to trigger hover
-        const hover = await hp.provideHover(doc, new vscode.Position(0, 50));
-        if (hover) {
-          assert.ok(hover.contents.length > 0);
-          const md = hover.contents[0] as vscode.MarkdownString;
-          assert.ok(md.value.includes('**'));
-          assert.ok(md.value.includes('*'));
-        }
-        repo.dispose();
-        bp.dispose();
-      });
+		// Cursor at end of line to trigger hover
+		const hover = await hp.provideHover(doc, new vscode.Position(0, 50));
+		if (hover) {
+			assert.ok(hover.contents.length > 0);
+			const md = hover.contents[0] as vscode.MarkdownString;
+			assert.ok(md.value.includes('**'));
+			assert.ok(md.value.includes('*'));
+		}
+		repo.dispose();
+		bp.dispose();
+	});
 });
