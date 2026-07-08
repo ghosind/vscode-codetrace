@@ -14,8 +14,8 @@ CodeTrace is a performant, privacy-first Git blame extension that works entirely
 - **Uncommitted Changes** — Lines with uncommitted modifications are clearly labeled as "Uncommitted Changes".
 - **Line History Panel** — Sidebar panel tracking the full commit chain that modified the currently selected line, using `git log -L`.
 - **File History Panel** — Sidebar panel showing the complete commit timeline for the currently open file.
-- **Status Bar** — Displays current branch, uncommitted file count, and one-click access to the sidebar.
-- **Plugin Conflict Detection** — Automatically detects GitLens, Git Graph, and other conflicting extensions, offering to disable their blame features.
+- **Status Bar** — Displays current branch and commit hash of the selected line. Click to open the sidebar.
+- **Plugin Conflict Detection** — Automatically on startup (and on-demand via command) detects GitLens, Git Graph, Git History, and Git Blame extensions, offering one-click disable of their conflicting features.
 - **Multi-language** — Full English and Chinese (简体中文) support. Auto-detects VS Code display language.
 - **Theme Adaptive** — All UI elements follow VS Code's native theme colors. No custom color schemes.
 - **100% Local** — No network requests. No telemetry. No data collection. Your code never leaves your machine.
@@ -31,7 +31,7 @@ CodeTrace is a performant, privacy-first Git blame extension that works entirely
 
 1. Open VS Code
 2. Go to Extensions (`Ctrl+Shift+X` / `Cmd+Shift+X`)
-3. Search for **CodeTrace**
+3. Search for **Git Code Trace**
 4. Click **Install**
 
 ### From VSIX
@@ -40,17 +40,17 @@ CodeTrace is a performant, privacy-first Git blame extension that works entirely
 code --install-extension codetrace-1.0.0.vsix
 ```
 
-## Usage
+## Commands
 
 Once installed, CodeTrace activates automatically when you open a workspace containing a `.git` directory.
 
-| Action | How |
-|--------|-----|
-| View inline blame | Move cursor over any line — blame appears at line end |
-| See commit details | Hover over any line |
-| Open sidebar | Click the CodeTrace icon in the Activity Bar, or click the status bar |
-| Toggle inline blame | Run `CodeTrace: Toggle Inline Blame` from Command Palette |
-| Show file history | Right-click in editor → `CodeTrace: Show File History` |
+| Command | ID | Description |
+|---------|-----|-------------|
+| `CodeTrace: Toggle Inline Blame` | `codetrace.toggleBlame` | Show/hide inline blame annotations |
+| `CodeTrace: Show File History` | `codetrace.showFileHistory` | Open the file history sidebar panel |
+| `CodeTrace: Show Sidebar` | `codetrace.showSidebar` | Open the CodeTrace sidebar |
+| `CodeTrace: Toggle Status Bar` | `codetrace.toggleStatusBar` | Show/hide the status bar item |
+| `CodeTrace: Detect Plugin Conflicts` | `codetrace.detectConflicts` | Manually trigger plugin conflict detection |
 
 ## Configuration
 
@@ -68,6 +68,7 @@ All settings are under `codetrace.*` in VS Code settings:
 | `codetrace.ignore.useGitignore` | `true` | Also respect `.gitignore` |
 | `codetrace.fileSizeLimit` | `20000` | Max file lines for inline blame (0 = unlimited) |
 | `codetrace.cache.maxCommits` | `20` | Commits cached per workspace |
+| `codetrace.logLevel` | `"info"` | Log level: `"debug"`, `"info"`, `"warn"`, or `"error"` |
 
 ## Contributing
 
