@@ -64,10 +64,6 @@
         "title": "%codetrace.command.showFileHistory%"
       },
       {
-        "command": "codetrace.revertFileVersion",
-        "title": "%codetrace.command.revertFileVersion%"
-      },
-      {
         "command": "codetrace.showSidebar",
         "title": "%codetrace.command.showSidebar%"
       },

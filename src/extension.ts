@@ -100,18 +100,6 @@ function registerCommands(context: vscode.ExtensionContext): void {
       }
       vscode.commands.executeCommand('workbench.view.extension.codetrace-sidebar');
     }),
-    vscode.commands.registerCommand('codetrace.revertFileVersion', async (hash?: string) => {
-      const editor = vscode.window.activeTextEditor;
-      if (!editor || !repoManager || !hash) {
-        return;
-      }
-      const content = await repoManager.getFileAtCommit(editor.document.uri.fsPath, hash);
-      if (content) {
-        const r = new vscode.Range(editor.document.positionAt(0),
-          editor.document.positionAt(editor.document.getText().length));
-        await editor.edit((b) => b.replace(r, content));
-      }
-    }),
     vscode.commands.registerCommand('codetrace.showSidebar', () =>
       vscode.commands.executeCommand('workbench.view.extension.codetrace-sidebar')),
     vscode.commands.registerCommand('codetrace.toggleStatusBar', () => statusBarManager?.toggle()),
